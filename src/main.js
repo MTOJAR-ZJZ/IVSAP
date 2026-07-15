@@ -1696,9 +1696,10 @@ function simulateAlert() {
   if (conf >= 80) {
     setTimeout(() => {
       const ticketId = 'WO-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + String(window.DB.tickets.length + 1).padStart(5,'0');
+      const ticketTitle = `${s.name} ${type}告警`;
       window.DB.tickets.unshift({
         id: ticketId,
-        title: `${s.name} ${type}告警`,
+        title: ticketTitle,
         priority: 'high', status: 'pending_assign', assignee: '-',
         alerts: [alert.id], sla: '-', createdAt: new Date().toLocaleString('zh-CN'),
         desc: '', photos: [],
@@ -1711,7 +1712,7 @@ function simulateAlert() {
       // 如果当前在告警页面，实时追加新告警到表格
       if (currentPage === 'alerts') renderAlerts();
       if (currentPage === 'tickets') renderTickets(document.querySelector('.tab.active')?.textContent?.includes('看板') ? 'kanban' : 'list');
-      addTicketLog(ticketId, `自动创建 ${title}`);
+      addTicketLog(ticketId, `自动创建 ${ticketTitle}`);
       toast(`高置信告警自动创建工单: ${ticketId}`, 'info');
     }, 2000);
   }
