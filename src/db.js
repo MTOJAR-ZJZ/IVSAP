@@ -103,3 +103,40 @@ window.DB = {
     globalSensitivity: 0.65,
   },
 };
+
+// ===================== 数据持久化 =====================
+// 将数据保存至 localStorage，刷新页面后恢复
+
+(function() {
+  const STORAGE_KEY = 'ivsap_db_data';
+
+  // 从 localStorage 恢复数据
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      Object.keys(data).forEach(k => {
+        if (k === '_save') return;
+        if (Array.isArray(data[k])) {
+          window.DB[k] = data[k];
+        } else if (typeof data[k] === 'object' && data[k] !== null && window.DB[k]) {
+          Object.assign(window.DB[k], data[k]);
+        } else {
+          window.DB[k] = data[k];
+        }
+      });
+    }
+  } catch(e) {}
+
+  // 保存数据到 localStorage
+  window.DB._save = function() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(window.DB));
+    } catch(e) {}
+  };
+
+  // 页面关闭/刷新时保存
+  window.addEventListener('beforeunload', () => window.DB._save());
+  // 定期自动保存（每 15 秒）
+  setInterval(() => window.DB._save(), 15000);
+})();

@@ -358,6 +358,7 @@ window.saveAlgoPrompt = (index) => {
   const a = window.DB.algoTypes[index];
   if (typeof a === 'string') window.DB.algoTypes[index] = { name: a };
   window.DB.algoTypes[index].prompt = document.getElementById('algoPrompt').value;
+  window.DB._save();
   toast('提示词已保存');
   showAlgoManager();
 };
@@ -368,6 +369,7 @@ window.addAlgoType = () => {
   if (window.DB.algoTypes.some(a => (typeof a === 'string' ? a : a.name) === name)) { toast('该算法已存在', 'error'); return; }
   window.DB.algoTypes.push({ name, prompt: '' });
   document.getElementById('newAlgoName').value = '';
+  window.DB._save();
   toast(`算法「${name}」已添加`);
   window.showAlgoManager();
 };
@@ -381,6 +383,7 @@ window.removeAlgoType = (index) => {
     window.DB.detections.forEach(d => { if (d.algo === name) d.algo = '未配置'; });
   }
   window.DB.algoTypes.splice(index, 1);
+  window.DB._save();
   toast(`算法「${name}」已移除`);
   window.showAlgoManager();
 };
@@ -407,6 +410,7 @@ window.handleAlert = (id, action) => {
     if (note) a.note = note;
   }
   toast(`告警 ${a.id} 标记为 ${actionNames[action]}`);
+  window.DB._save();
   renderAlerts();
   updateNavBadges();
 };
@@ -435,6 +439,7 @@ window.batchCreateTicket = () => {
   // 将关联告警标记为已确认
   selectedAlertList.forEach(a => { a.status = 'confirmed'; a.note = `已合并为工单 ${ticketId}`; });
   selectedAlerts.clear();
+  window.DB._save();
   toast(`合并创建工单成功：${title}`);
   navigate('tickets');
 };
@@ -482,6 +487,7 @@ window.saveTicket = () => {
   });
   closeModal();
   toast('工单创建成功');
+  window.DB._save();
   renderTickets('list');
   updateNavBadges();
 };
@@ -561,6 +567,7 @@ window.doAssign = (id) => {
   closeModal();
   addTicketLog(t.id, `分配 ${t.title} 给 ${user}`);
   toast(`工单已分配给 ${user}，通知已发送`);
+  window.DB._save();
   renderTickets('list');
   updateNavBadges();
 };
@@ -573,6 +580,7 @@ window.submitTicketFeedback = (id) => {
   t.sla = '待验收';
   addTicketLog(t.id, `提交验收 ${t.title}`);
   toast('处置完成，已提交验收');
+  window.DB._save();
   renderTickets('list');
   updateNavBadges();
 };
@@ -583,6 +591,7 @@ window.submitTicketReview = (id) => {
   t.sla = '待验收';
   addTicketLog(t.id, `提交验收 ${t.title}`);
   toast('已提交验收申请');
+  window.DB._save();
   renderTickets('list');
   updateNavBadges();
 };
@@ -593,6 +602,7 @@ window.approveTicket = (id) => {
   t.sla = '已完成';
   addTicketLog(t.id, `验收通过 ${t.title}`);
   toast('工单验收通过，已关闭');
+  window.DB._save();
   renderTickets('list');
   updateNavBadges();
 };
@@ -603,6 +613,7 @@ window.rejectTicket = (id) => {
   t.sla = '已驳回-请重试';
   addTicketLog(t.id, `驳回 ${t.title}`);
   toast('工单已驳回，返回处理中');
+  window.DB._save();
   renderTickets('list');
   updateNavBadges();
 };
@@ -652,6 +663,7 @@ window.saveTicketRules = () => {
     assignStrategy: document.getElementById('ruleStrategy').value,
   };
   closeModal();
+  window.DB._save();
   toast('规则保存成功', 'success');
 };
 
@@ -697,6 +709,7 @@ window.saveAddDept = () => {
     window.DB.depts.push(newDept);
   }
   closeModal();
+  window.DB._save();
   toast(`部门「${name}」创建成功`);
   renderUsers();
 };
@@ -767,6 +780,7 @@ window.saveAddUser = () => {
   });
   closeModal();
   toast('人员添加成功');
+  window.DB._save();
   renderUsers();
 };
 
@@ -817,9 +831,7 @@ window.showEditUser = (id) => {
     </div>
     <div class="form-group">
       <label class="form-label">所属部门</label>
-      <select class="form-select" id="editUserDept">
-        ${flattenDepts(window.DB.depts).map(d => `<option ${u.dept === d ? 'selected' : ''}>${d}</option>`).join('')}
-      </select>
+      <input class="form-input" value="${u.dept}" id="editUserDept" />
     </div>
     <div class="form-group">
       <label class="form-label">角色</label>
@@ -855,6 +867,7 @@ window.saveEditUser = (id) => {
   }
   closeModal();
   toast('人员信息已更新，工单责任人已同步');
+  window.DB._save();
   renderUsers();
 };
 
@@ -862,6 +875,7 @@ window.toggleUser = (id) => {
   const u = window.DB.users.find(x => x.id === id);
   u.status = u.status === 'active' ? 'disabled' : 'active';
   toast(`${u.name} 已${u.status === 'active' ? '启用' : '禁用'}`);
+  window.DB._save();
   renderUsers();
 };
 
@@ -910,6 +924,7 @@ window.saveAddRole = () => {
     name, preset: false, perms: selected.length > 0 ? selected : ['none'],
   });
   closeModal();
+  window.DB._save();
   toast('角色创建成功');
   switchUserTab(document.querySelector('#userTabContent'), 'roles');
 };
@@ -951,6 +966,7 @@ window.saveEditRole = (id) => {
   r.perms = selected.length > 0 ? selected : ['none'];
   r.preset = false;
   closeModal();
+  window.DB._save();
   toast('角色已更新，导航菜单已同步');
   switchUserTab(document.querySelector('#userTabContent'), 'roles');
   applyRolePermissions(); // 重新应用权限
@@ -1223,52 +1239,41 @@ function switchUserTab(container, tab) {
     content.innerHTML = html`
       <div class="quick-actions" style="margin-bottom:16px">
         <button class="btn btn-primary" onclick="showAddUser()">＋ 添加人员</button>
-        <button class="btn btn-outline" onclick="showAddDept()">🏢 新增部门</button>
         <button class="btn btn-outline" onclick="exportAddressBook()">📥 导出通讯录</button>
       </div>
-      <div style="display:grid;grid-template-columns:240px 1fr;gap:16px">
-        <div class="card">
-          <div class="card-header"><span class="card-title">组织架构</span></div>
-          <div class="card-body" style="padding:12px">
-            <div class="org-tree">
-              ${renderOrgTree(window.DB.depts)}
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">人员列表</span></div>
-          <div class="card-body" style="padding:0">
-            <div class="table-wrap">
-              <table>
-                <thead>
+      <div class="card">
+        <div class="card-header"><span class="card-title">人员列表</span></div>
+        <div class="card-body" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>姓名</th>
+                  <th>账号</th>
+                  <th>所属部门</th>
+                  <th>角色</th>
+                  <th>手机号</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${window.DB.users.map(u => html`
                   <tr>
-                    <th>姓名</th>
-                    <th>账号</th>
-                    <th>所属部门</th>
-                    <th>角色</th>
-                    <th>手机号</th>
-                    <th>状态</th>
-                    <th>操作</th>
+                    <td><strong>${u.name}</strong></td>
+                    <td>${u.account}</td>
+                    <td>${u.dept}</td>
+                    <td>${u.role}</td>
+                    <td>${u.phone}</td>
+                    <td><span class="badge ${u.status === 'active' ? 'badge-online' : 'badge-offline'}"><span class="badge-dot"></span>${u.status === 'active' ? '启用' : '禁用'}</span></td>
+                    <td>
+                      <button class="btn btn-outline btn-xs" onclick="showEditUser('${u.id}')">编辑</button>
+                      <button class="btn btn-${u.status === 'active' ? 'warning' : 'success'} btn-xs" onclick="toggleUser('${u.id}')">${u.status === 'active' ? '禁用' : '启用'}</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  ${window.DB.users.map(u => html`
-                    <tr>
-                      <td><strong>${u.name}</strong></td>
-                      <td>${u.account}</td>
-                      <td>${u.dept}</td>
-                      <td>${u.role}</td>
-                      <td>${u.phone}</td>
-                      <td><span class="badge ${u.status === 'active' ? 'badge-online' : 'badge-offline'}"><span class="badge-dot"></span>${u.status === 'active' ? '启用' : '禁用'}</span></td>
-                      <td>
-                        <button class="btn btn-outline btn-xs" onclick="showEditUser('${u.id}')">编辑</button>
-                        <button class="btn btn-${u.status === 'active' ? 'warning' : 'success'} btn-xs" onclick="toggleUser('${u.id}')">${u.status === 'active' ? '禁用' : '启用'}</button>
-                      </td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1464,6 +1469,7 @@ window.saveSystemConfig = () => {
   window.DB.config.screenshotRetentionDays = parseInt(document.getElementById('configScreenshotRetention').value) || 7;
   window.DB.config.websocketHeartbeat = parseInt(document.getElementById('configHeartbeat').value) || 30;
   window.DB.config.globalSensitivity = parseFloat(document.getElementById('configSensitivity').value) || 0.65;
+  window.DB._save();
   toast('系统配置已保存');
 };
 
@@ -1476,6 +1482,7 @@ function runDataCleanup() {
   const cutoffStr = cutoff.toISOString().slice(0, 10);
   window.DB.ticketLogs = window.DB.ticketLogs.filter(log => log.date >= cutoffStr);
   if (window.DB.alerts.length > 200) window.DB.alerts.length = 200;
+  window.DB._save();
 }
 window.runDataCleanup = runDataCleanup;
 
@@ -1520,6 +1527,7 @@ function batchStreamAction(action) {
     }
   });
   selectedStreams.clear();
+  window.DB._save();
   toast(`批量${actionNames[action]}成功`);
   renderStreams();
 }
@@ -1577,6 +1585,7 @@ function saveStream() {
   });
   closeModal();
   toast(`推流「${name}」创建成功`);
+  window.DB._save();
   renderStreams();
 }
 window.saveStream = saveStream;
@@ -1609,6 +1618,7 @@ function confirmEditStream(id) {
   s.addr = document.getElementById('editStreamAddr').value || s.addr;
   closeModal();
   toast('推流信息已更新');
+  window.DB._save();
   renderStreams();
 }
 window.confirmEditStream = confirmEditStream;
@@ -1622,6 +1632,7 @@ function deleteStream(id) {
   window.DB.alerts = window.DB.alerts.filter(a => a.stream !== s.name);
   window.DB.streams = window.DB.streams.filter(x => x.id !== id);
   toast('推流已删除，关联检测项目和告警已清理');
+  window.DB._save();
   renderStreams();
 }
 window.deleteStream = deleteStream;
@@ -1667,6 +1678,7 @@ function confirmAddDetection() {
   });
   closeModal();
   toast('检测项目创建成功');
+  window.DB._save();
   renderDetection();
 }
 window.confirmAddDetection = confirmAddDetection;
@@ -1676,6 +1688,7 @@ function toggleDetection(id) {
   if (!d) return;
   d.status = d.status === 'running' ? 'stopped' : 'running';
   toast(`检测项目「${d.name}」已${d.status === 'running' ? '启动' : '停止'}`);
+  window.DB._save();
   renderDetection();
 }
 window.toggleDetection = toggleDetection;
@@ -1708,6 +1721,7 @@ window.confirmEditDetection = (id) => {
   d.sensitivity = parseFloat(document.getElementById('editDetSensitivity').value) || d.sensitivity;
   d.roi = document.getElementById('editDetRoi').value || d.roi;
   closeModal();
+  window.DB._save();
   toast('检测配置已保存');
   renderDetection();
 };
@@ -1744,6 +1758,7 @@ function simulateAlert() {
   };
   window.DB.alerts.unshift(alert);
   if (window.DB.alerts.length > 50) window.DB.alerts.length = 50;
+  window.DB._save();
 
   // Update alert stream if on dashboard — 刷新整个工作台以展示按流分组的告警
   if (currentPage === 'dashboard') {
@@ -1769,7 +1784,8 @@ function simulateAlert() {
         alerts: [alert.id], sla: '-', createdAt: new Date().toLocaleString('zh-CN'),
         desc: '', photos: [],
       });
-      // 实时更新所有 badge
+      // 保存并更新 badge
+      window.DB._save();
       updateNavBadges();
       // 如果当前在告警页面，实时追加新告警到表格
       if (currentPage === 'alerts') renderAlerts();
