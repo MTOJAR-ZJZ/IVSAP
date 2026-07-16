@@ -1407,6 +1407,10 @@ function renderSystem() {
                 <label class="form-label">API Key</label>
                 <input class="form-input" type="password" value="${m.apiKey || '********'}" placeholder="未配置" readonly />
               </div>
+              <div style="margin-top:10px;display:flex;gap:6px">
+                <button class="btn btn-outline btn-xs" onclick="showEditApiModel('${m.id}')">编辑</button>
+                ${!m.isDefault ? html`<button class="btn btn-outline btn-xs" onclick="setDefaultApiModel('${m.id}')">设为默认</button>` : ''}
+              </div>
             </div>
           `).join('')}
         </div>
@@ -1469,6 +1473,57 @@ window.saveSystemConfig = () => {
   window.DB.config.globalSensitivity = parseFloat(document.getElementById('configSensitivity').value) || 0.65;
   window.DB._save();
   toast('系统配置已保存');
+};
+
+// ---- API Model Edit ----
+
+window.showEditApiModel = (id) => {
+  const m = window.DB.apiModels.find(x => x.id === id);
+  if (!m) return;
+  modal(html`
+    <div class="modal-title">编辑模型 — ${m.name}</div>
+    <div class="form-group">
+      <label class="form-label">模型名称</label>
+      <input class="form-input" value="${m.name}" id="editModelName" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">提供商</label>
+      <input class="form-input" value="${m.provider}" id="editModelProvider" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">接口地址</label>
+      <input class="form-input" value="${m.apiUrl}" id="editModelUrl" style="font-size:12px;font-family:monospace" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <input class="form-input" type="password" value="${m.apiKey || ''}" placeholder="留空则保持不变" id="editModelKey" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveEditApiModel('${id}')">保存</button>
+    </div>
+  `);
+};
+
+window.saveEditApiModel = (id) => {
+  const m = window.DB.apiModels.find(x => x.id === id);
+  if (!m) return;
+  m.name = document.getElementById('editModelName').value || m.name;
+  m.provider = document.getElementById('editModelProvider').value || m.provider;
+  m.apiUrl = document.getElementById('editModelUrl').value || m.apiUrl;
+  const newKey = document.getElementById('editModelKey').value;
+  if (newKey) m.apiKey = newKey;
+  closeModal();
+  window.DB._save();
+  toast(`模型「${m.name}」配置已更新`);
+  renderSystem();
+};
+
+window.setDefaultApiModel = (id) => {
+  window.DB.apiModels.forEach(m => { m.isDefault = m.id === id; });
+  window.DB._save();
+  toast('默认模型已切换');
+  renderSystem();
 };
 
 // ---- Data Cleanup ----
