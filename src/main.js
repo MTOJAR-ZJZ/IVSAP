@@ -230,7 +230,7 @@ function renderDetection() {
   setPageContent(html`
     <div class="quick-actions" style="margin-bottom:16px">
       <button class="btn btn-primary" onclick="showAddDetection()">＋ 创建检测项目</button>
-      <button class="btn btn-outline" onclick="showAlgoManager()">🧠 算法管理</button>
+      <button class="btn btn-outline" onclick="navigate('algorithms')">🧠 算法管理</button>
     </div>
 
     <div class="card">
@@ -307,7 +307,44 @@ function renderDetection() {
   `);
 }
 
-// ---- Algorithm Manager（弹窗形式）----
+// ---- Algorithm Manager（独立子页面）----
+function renderAlgorithms() {
+  setPageContent(html`
+    <div class="quick-actions" style="margin-bottom:16px">
+      <button class="btn btn-outline" onclick="navigate('detection')">← 返回检测项目</button>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <input class="form-input" placeholder="输入新算法名称" id="algoPageNewName" style="width:200px" />
+        <button class="btn btn-primary" onclick="addAlgoFromPage()">＋ 添加算法</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">算法类型管理</span>
+        <span style="font-size:12px;color:var(--text-secondary)">共 ${window.DB.algoTypes.length} 种</span>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          ${window.DB.algoTypes.map((a, i) => html`
+            <div style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;min-width:200px">
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:600;color:var(--text)">${typeof a === 'string' ? a : a.name}</div>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${(a.prompt || '暂无提示词').slice(0, 30)}${a.prompt && a.prompt.length > 30 ? '...' : ''}</div>
+              </div>
+              <div style="display:flex;gap:4px">
+                <button class="btn btn-outline btn-xs" onclick="editAlgoPrompt(${i})">提示词</button>
+                <button class="btn btn-danger btn-xs" onclick="removeAlgoType(${i})">删除</button>
+              </div>
+            </div>
+          `).join('')}
+          ${window.DB.algoTypes.length === 0 ? '<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:13px">暂无算法类型，请添加</div>' : ''}
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;font-size:12px;color:var(--text-secondary)"">💡 点击"提示词"按钮编辑算法的 AI 检测提示词 · 大模型接口请在系统管理中配置</div>
+  `);
+}
+window.renderAlgorithms = renderAlgorithms;
+
 window.showAlgoManager = () => {
   modal(html`
     <div class="modal-title">算法类型管理</div>
@@ -360,7 +397,7 @@ window.saveAlgoPrompt = (index) => {
   window.DB.algoTypes[index].prompt = document.getElementById('algoPrompt').value;
   window.DB._save();
   toast('提示词已保存');
-  showAlgoManager();
+  if (currentPage === 'algorithms') renderAlgorithms(); else window.showAlgoManager();
 };
 
 window.addAlgoType = () => {
@@ -374,6 +411,17 @@ window.addAlgoType = () => {
   window.showAlgoManager();
 };
 
+window.addAlgoFromPage = () => {
+  const name = document.getElementById('algoPageNewName').value.trim();
+  if (!name) { toast('请输入算法名称', 'error'); return; }
+  if (window.DB.algoTypes.some(a => (typeof a === 'string' ? a : a.name) === name)) { toast('该算法已存在', 'error'); return; }
+  window.DB.algoTypes.push({ name, prompt: '' });
+  document.getElementById('algoPageNewName').value = '';
+  window.DB._save();
+  toast(`算法「${name}」已添加`);
+  renderAlgorithms();
+};
+
 window.removeAlgoType = (index) => {
   const a = window.DB.algoTypes[index];
   const name = typeof a === 'string' ? a : a.name;
@@ -385,7 +433,7 @@ window.removeAlgoType = (index) => {
   window.DB.algoTypes.splice(index, 1);
   window.DB._save();
   toast(`算法「${name}」已移除`);
-  window.showAlgoManager();
+  if (currentPage === 'algorithms') renderAlgorithms(); else window.showAlgoManager();
 };
 
 // Alerts
@@ -881,6 +929,7 @@ const PAGE_ITEMS = [
   { id: 'dashboard', label: '工作台' },
   { id: 'streams', label: '推流管理' },
   { id: 'detection', label: '检测项目' },
+  { id: 'algorithms', label: '算法管理' },
   { id: 'alerts', label: '告警中心' },
   { id: 'tickets', label: '工单分发' },
   { id: 'users', label: '人员权限' },
@@ -989,6 +1038,7 @@ function navigate(page) {
     dashboard: renderDashboard,
     streams: renderStreams,
     detection: renderDetection,
+    algorithms: renderAlgorithms,
     alerts: renderAlerts,
     tickets: () => renderTickets('list'),
     users: renderUsers,
