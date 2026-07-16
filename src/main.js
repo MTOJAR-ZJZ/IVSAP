@@ -734,25 +734,22 @@ window.showAddUser = () => {
         <input class="form-input" placeholder="姓名" id="userName" />
       </div>
       <div class="form-group">
-        <label class="form-label">账号 *</label>
-        <input class="form-input" placeholder="登录账号" id="userAccount" />
+        <label class="form-label">手机号 *</label>
+        <input class="form-input" placeholder="手机号（将作为登录账号）" id="userPhone" oninput="document.getElementById('userAccount').value=this.value" />
+        <input type="hidden" id="userAccount" />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">手机号</label>
-        <input class="form-input" placeholder="手机号" id="userPhone" />
-      </div>
-      <div class="form-group">
         <label class="form-label">邮箱</label>
         <input class="form-input" placeholder="邮箱" id="userEmail" />
       </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">所属部门</label>
-      <select class="form-select" id="userDept">
-        ${flattenDepts(window.DB.depts).map(d => `<option>${d}</option>`).join('')}
-      </select>
+      <div class="form-group">
+        <label class="form-label">所属部门</label>
+        <select class="form-select" id="userDept">
+          ${flattenDepts(window.DB.depts).map(d => `<option>${d}</option>`).join('')}
+        </select>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">角色</label>
@@ -767,14 +764,16 @@ window.showAddUser = () => {
 
 window.saveAddUser = () => {
   const name = document.getElementById('userName').value;
+  const phone = document.getElementById('userPhone').value;
   if (!name) { toast('请输入姓名', 'error'); return; }
+  if (!phone) { toast('请输入手机号', 'error'); return; }
   window.DB.users.push({
     id: 'U' + String(window.DB.users.length + 1).padStart(3,'0'),
     name,
-    account: document.getElementById('userAccount').value || name,
+    account: phone,
     dept: document.getElementById('userDept').value,
     role: document.getElementById('userRole').value,
-    phone: document.querySelector('#userPhone')?.value || '',
+    phone,
     email: document.querySelector('#userEmail')?.value || '',
     status: 'active',
   });
@@ -815,23 +814,20 @@ window.showEditUser = (id) => {
         <input class="form-input" value="${u.name}" id="editUserName" />
       </div>
       <div class="form-group">
-        <label class="form-label">账号 *</label>
-        <input class="form-input" value="${u.account}" id="editUserAccount" />
+        <label class="form-label">手机号 *</label>
+        <input class="form-input" value="${u.phone}" id="editUserPhone" oninput="document.getElementById('editUserAccount').value=this.value" />
+        <input type="hidden" id="editUserAccount" value="${u.phone}" />
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">手机号</label>
-        <input class="form-input" value="${u.phone}" id="editUserPhone" />
-      </div>
-      <div class="form-group">
         <label class="form-label">邮箱</label>
         <input class="form-input" value="${u.email}" id="editUserEmail" />
       </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">所属部门</label>
-      <input class="form-input" value="${u.dept}" id="editUserDept" />
+      <div class="form-group">
+        <label class="form-label">所属部门</label>
+        <input class="form-input" value="${u.dept}" id="editUserDept" />
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">角色</label>
@@ -852,11 +848,13 @@ window.showEditUser = (id) => {
 window.saveEditUser = (id) => {
   const u = window.DB.users.find(x => x.id === id);
   const name = document.getElementById('editUserName').value;
+  const phone = document.getElementById('editUserPhone').value;
   if (!name) { toast('请输入姓名', 'error'); return; }
+  if (!phone) { toast('请输入手机号', 'error'); return; }
   const oldName = u.name;
   u.name = name;
-  u.account = document.getElementById('editUserAccount').value;
   u.phone = document.getElementById('editUserPhone').value;
+  u.account = u.phone;
   u.email = document.getElementById('editUserEmail').value;
   u.dept = document.getElementById('editUserDept').value;
   u.role = document.getElementById('editUserRole').value;
