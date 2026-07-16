@@ -27,7 +27,7 @@ async function migrate() {
   `);
 
   for (const file of files) {
-    const [existing] = await pool.query('SELECT 1 FROM _migrations WHERE name = $1', [file]);
+    const existing = await pool.query('SELECT 1 FROM _migrations WHERE name = $1', [file]);
     if (existing.rows.length > 0) {
       console.log(`  SKIP ${file} — already applied`);
       continue;
