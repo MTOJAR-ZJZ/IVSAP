@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: stream_analyzer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    build: ./server
+    command: node db/migrate.js
+    environment:
+      DB_HOST: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  seed:
+    build: ./server
+    command: node db/seed.js
+    environment:
+      DB_HOST: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    build: ./server
+    ports:
+      - "3001:3001"
+    environment:
+      DB_HOST: postgres
+      DB_PASSWORD: postgres
+      CORS_ORIGIN: http://localhost:3000
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:

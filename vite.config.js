@@ -9,7 +9,7 @@ function serveRawJs() {
     name: 'serve-raw-js',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url === '/src/main.js' || req.url === '/src/db.js') {
+        if (req.url === '/src/main.js' || req.url === '/src/db.js' || req.url === '/src/api.js') {
           const filePath = resolve(process.cwd(), req.url.replace(/^\//, ''));
           try {
             const content = readFileSync(filePath, 'utf8');
@@ -36,6 +36,10 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    proxy: {
+      '/api': { target: 'http://localhost:3001', changeOrigin: true },
+      '/ws': { target: 'ws://localhost:3001', ws: true },
+    },
   },
   plugins: [serveRawJs()],
 });

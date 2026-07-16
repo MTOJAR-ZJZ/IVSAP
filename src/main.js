@@ -1911,13 +1911,21 @@ function updateNavBadges() {
 }
 window.updateNavBadges = updateNavBadges;
 
-document.addEventListener('DOMContentLoaded', () => {
+// ===================== APP INIT =====================
+
+// Store init function so api.js can call it after login
+window.APP_INIT = function appInit() {
+  if (!window.DB || !window.DB.streams) {
+    // No data loaded yet — retry in 100ms
+    setTimeout(appInit, 100);
+    return;
+  }
+
   // Sidebar navigation
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       navigate(item.dataset.page);
-      // Close sidebar on mobile
       document.getElementById('sidebar').classList.remove('open');
     });
   });
@@ -1930,18 +1938,18 @@ document.addEventListener('DOMContentLoaded', () => {
       <div style="margin-bottom:12px;font-size:13px;color:var(--text-secondary)">您有 ${pending.length} 条待处理告警</div>
       ${pending.slice(0, 5).map(a => html`
         <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
-          <strong>${a.type}</strong> @ ${a.stream}
-          <span style="color:var(--text-secondary);float:right">${a.time}</span>
+          <strong>${a.type}</strong> @ ${a.stream_name || a.stream}
+          <span style="color:var(--text-secondary);float:right">${a.created_at || a.time}</span>
         </div>
       `).join('')}
       ${pending.length > 5 ? html`<div style="padding:8px 0;font-size:12px;color:var(--text-secondary)">...还有 ${pending.length - 5} 条</div>` : ''}
       ${pending.length === 0 ? html`<div style="padding:20px;text-align:center;font-size:13px;color:var(--text-secondary)">暂无新通知</div>` : ''}
       <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>
     `);
-    // 点击后消除红点
     const dot = document.querySelector('.notif-dot');
     if (dot) dot.style.display = pending.length === 0 ? 'none' : 'block';
   });
+
   document.getElementById('sidebarToggle').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('open');
   });
@@ -1953,26 +1961,34 @@ document.addEventListener('DOMContentLoaded', () => {
   updateTime();
   setInterval(updateTime, 1000);
 
-  // Simulate realtime alerts every 8-15s
-  function scheduleSim() {
-    const delay = 8000 + Math.random() * 7000;
-    setTimeout(() => {
-      simulateAlert();
-      scheduleSim();
-    }, delay);
-  }
-  setTimeout(scheduleSim, 5000);
-
-  // 应用角色权限（控制导航菜单显示）
+  // Apply role permissions
   applyRolePermissions();
-
-  // 更新导航角标
   updateNavBadges();
 
-  // 自动执行数据清理（启动时和每天一次）
+  // Auto execute data cleanup
   window.runDataCleanup();
   setInterval(() => window.runDataCleanup(), 24 * 60 * 60 * 1000);
 
   // Render default page
   navigate('dashboard');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Check auth: if no token, show login; else start directly
+  const savedToken = localStorage.getItem('ivsap_token');
+  if (savedToken) {
+    // API client will load data from backend
+    if (window.DB && window.DB.streams) {
+      window.APP_INIT();
+    } else {
+      // Wait for API data to load
+      const check = setInterval(() => {
+        if (window.DB && window.DB.streams) {
+          clearInterval(check);
+          window.APP_INIT();
+        }
+      }, 200);
+    }
+  }
+  // If no token, api.js shows the login page
 });
