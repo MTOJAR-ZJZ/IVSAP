@@ -1915,11 +1915,15 @@ window.updateNavBadges = updateNavBadges;
 
 // Store init function so api.js can call it after login
 window.APP_INIT = function appInit() {
+  // 防止重复初始化
+  if (window._appInitialized) return;
   if (!window.DB || !window.DB.streams) {
     // No data loaded yet — retry in 100ms
     setTimeout(appInit, 100);
     return;
   }
+
+  window._appInitialized = true;
 
   // Sidebar navigation
   document.querySelectorAll('.nav-item').forEach(item => {
@@ -1974,21 +1978,23 @@ window.APP_INIT = function appInit() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Check auth: if no token, show login; else start directly
-  const savedToken = localStorage.getItem('ivsap_token');
-  if (savedToken) {
-    // API client will load data from backend
-    if (window.DB && window.DB.streams) {
-      window.APP_INIT();
-    } else {
-      // Wait for API data to load
-      const check = setInterval(() => {
-        if (window.DB && window.DB.streams) {
-          clearInterval(check);
-          window.APP_INIT();
-        }
-      }, 200);
-    }
+  // 如果 api.js 已经完成了初始化，跳过
+  if (window._appInitialized) return;
+
+  // 等待 window.DB 就绪后初始化（适用于 db.js 提供模拟数据的场景）
+  if (window.DB && window.DB.streams) {
+    window.APP_INIT();
+  } else {
+    // 等 api.js 的自动初始化完成
+    const check = setInterval(() => {
+      if (window._appInitialized) {
+        clearInterval(check);
+      } else if (window.DB && window.DB.streams) {
+        clearInterval(check);
+        window.APP_INIT();
+      }
+    }, 200);
+    // 10秒超时停止轮询
+    setTimeout(() => clearInterval(check), 10000);
   }
-  // If no token, api.js shows the login page
 });

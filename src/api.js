@@ -126,6 +126,29 @@ function buildDeptTree(flatDepts) {
   return roots;
 }
 
+// ===== AUTO INIT =====
+
+(function autoInit() {
+  if (token) {
+    // 有 token → 自动加载后台数据
+    loadAllData().then(() => {
+      if (window.APP_INIT) window.APP_INIT();
+    }).catch(() => {
+      // 后端不可用时，降级使用 db.js 的模拟数据
+      console.warn('后端不可用，使用本地模拟数据');
+      if (window.DB && window.DB.streams && window.APP_INIT) {
+        window.APP_INIT();
+      } else {
+        showLoginPage();
+      }
+    });
+  } else if (!window.DB || !window.DB.streams) {
+    // 无 token 且无本地数据 → 显示登录页
+    showLoginPage();
+  }
+  // 无 token 但有 db.js 模拟数据 → 由 main.js 直接启动
+})();
+
 // ===== Save helpers (called from main.js mutations) =====
 
 window.API_SAVE = {

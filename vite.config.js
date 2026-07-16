@@ -29,7 +29,7 @@ function serveRawJs() {
 
 export default defineConfig({
   root: '.',
-  base: '/IVSAP/',
+  base: '/',
   build: {
     outDir: 'dist',
   },
