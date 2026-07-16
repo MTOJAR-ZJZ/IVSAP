@@ -7,6 +7,7 @@
 // ===================== STATE =====================
 
 let currentPage = 'dashboard';
+let currentTicketMode = 'list';
 let selectedStreams = new Set();
 let selectedAlerts = new Set();
 let selectedTickets = new Set();
@@ -407,6 +408,7 @@ window.handleAlert = (id, action) => {
   }
   toast(`告警 ${a.id} 标记为 ${actionNames[action]}`);
   renderAlerts();
+  updateNavBadges();
 };
 
 window.showAlertImg = () => {
@@ -420,15 +422,18 @@ window.showAlertImg = () => {
 
 window.batchCreateTicket = () => {
   if (selectedAlerts.size === 0) { toast('请先勾选要合并的告警', 'error'); return; }
-  const alertIds = window.DB.alerts.filter(a => selectedAlerts.has(a.id)).map(a => a.id);
-  const types = window.DB.alerts.filter(a => selectedAlerts.has(a.id)).map(a => a.type);
+  const selectedAlertList = window.DB.alerts.filter(a => selectedAlerts.has(a.id));
+  const alertIds = selectedAlertList.map(a => a.id);
+  const types = selectedAlertList.map(a => a.type);
   const title = types.join('、') + ' 合并工单';
+  const ticketId = 'WO-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + String(window.DB.tickets.length + 1).padStart(5,'0');
   window.DB.tickets.unshift({
-    id: 'WO-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + String(window.DB.tickets.length + 1).padStart(5,'0'),
-    title, priority: 'mid', status: 'pending_assign', assignee: '-',
+    id: ticketId, title, priority: 'mid', status: 'pending_assign', assignee: '-',
     alerts: alertIds, sla: '-', createdAt: new Date().toLocaleString('zh-CN'),
     desc: '', photos: [],
   });
+  // 将关联告警标记为已确认
+  selectedAlertList.forEach(a => { a.status = 'confirmed'; a.note = `已合并为工单 ${ticketId}`; });
   selectedAlerts.clear();
   toast(`合并创建工单成功：${title}`);
   navigate('tickets');
@@ -478,6 +483,7 @@ window.saveTicket = () => {
   closeModal();
   toast('工单创建成功');
   renderTickets('list');
+  updateNavBadges();
 };
 
 window.showTicketDetail = (id) => {
@@ -556,6 +562,7 @@ window.doAssign = (id) => {
   addTicketLog(t.id, `分配 ${t.title} 给 ${user}`);
   toast(`工单已分配给 ${user}，通知已发送`);
   renderTickets('list');
+  updateNavBadges();
 };
 
 window.submitTicketFeedback = (id) => {
@@ -567,6 +574,7 @@ window.submitTicketFeedback = (id) => {
   addTicketLog(t.id, `提交验收 ${t.title}`);
   toast('处置完成，已提交验收');
   renderTickets('list');
+  updateNavBadges();
 };
 
 window.submitTicketReview = (id) => {
@@ -576,6 +584,7 @@ window.submitTicketReview = (id) => {
   addTicketLog(t.id, `提交验收 ${t.title}`);
   toast('已提交验收申请');
   renderTickets('list');
+  updateNavBadges();
 };
 
 window.approveTicket = (id) => {
@@ -585,6 +594,7 @@ window.approveTicket = (id) => {
   addTicketLog(t.id, `验收通过 ${t.title}`);
   toast('工单验收通过，已关闭');
   renderTickets('list');
+  updateNavBadges();
 };
 
 window.rejectTicket = (id) => {
@@ -594,32 +604,55 @@ window.rejectTicket = (id) => {
   addTicketLog(t.id, `驳回 ${t.title}`);
   toast('工单已驳回，返回处理中');
   renderTickets('list');
+  updateNavBadges();
 };
 
 window.showTicketRules = () => {
+  const rules = window.DB.config.ticketRules || { algoType: '全部', confidence: 80, hitCount: 3, assignStrategy: '按人员忙闲度' };
   modal(html`
     <div class="modal-title">告警转工单规则</div>
     <div class="form-group">
       <label class="form-label">算法类型</label>
-      <select class="form-select"><option>全部</option><option>人员入侵</option><option>烟火检测</option><option>物品遗留</option><option>区域越界</option></select>
+      <select class="form-select" id="ruleAlgoType">
+        <option ${rules.algoType === '全部' ? 'selected' : ''}>全部</option>
+        <option ${rules.algoType === '人员入侵' ? 'selected' : ''}>人员入侵</option>
+        <option ${rules.algoType === '烟火检测' ? 'selected' : ''}>烟火检测</option>
+        <option ${rules.algoType === '物品遗留' ? 'selected' : ''}>物品遗留</option>
+        <option ${rules.algoType === '区域越界' ? 'selected' : ''}>区域越界</option>
+      </select>
     </div>
     <div class="form-group">
       <label class="form-label">置信度阈值</label>
-      <input class="form-input" type="number" value="80" min="0" max="100" /> %
+      <input class="form-input" type="number" id="ruleConfidence" value="${rules.confidence}" min="0" max="100" /> %
     </div>
     <div class="form-group">
       <label class="form-label">连续命中次数</label>
-      <input class="form-input" type="number" value="3" min="1" />
+      <input class="form-input" type="number" id="ruleHitCount" value="${rules.hitCount}" min="1" />
     </div>
     <div class="form-group">
       <label class="form-label">自动分配策略</label>
-      <select class="form-select"><option>按人员忙闲度</option><option>按技能组轮询</option><option>按值班表</option></select>
+      <select class="form-select" id="ruleStrategy">
+        <option ${rules.assignStrategy === '按人员忙闲度' ? 'selected' : ''}>按人员忙闲度</option>
+        <option ${rules.assignStrategy === '按技能组轮询' ? 'selected' : ''}>按技能组轮询</option>
+        <option ${rules.assignStrategy === '按值班表' ? 'selected' : ''}>按值班表</option>
+      </select>
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal()">取消</button>
-      <button class="btn btn-primary" onclick="closeModal();toast('规则保存成功','success')">保存规则</button>
+      <button class="btn btn-primary" onclick="window.saveTicketRules()">保存规则</button>
     </div>
   `);
+};
+
+window.saveTicketRules = () => {
+  window.DB.config.ticketRules = {
+    algoType: document.getElementById('ruleAlgoType').value,
+    confidence: parseInt(document.getElementById('ruleConfidence').value) || 80,
+    hitCount: parseInt(document.getElementById('ruleHitCount').value) || 3,
+    assignStrategy: document.getElementById('ruleStrategy').value,
+  };
+  closeModal();
+  toast('规则保存成功', 'success');
 };
 
 // Users
@@ -954,9 +987,10 @@ window.navigate = navigate;
 function pingStream(id) {
   const s = window.DB.streams.find(x => x.id === id);
   if (!s) return;
-  // 模拟 ping 检测
-  const was = s.status;
-  s.status = was === 'online' ? 'online' : 'offline';
+  // 模拟 ping 检测：15% 概率切换在线/离线状态
+  if (Math.random() < 0.15) {
+    s.status = s.status === 'online' ? 'offline' : 'online';
+  }
 }
 window.pingStream = pingStream;
 
@@ -1071,8 +1105,8 @@ function renderTickets(mode) {
       <button class="btn btn-primary" onclick="showCreateTicket()">＋ 创建工单</button>
       <button class="btn btn-outline" onclick="showTicketRules()">⚙️ 转单规则</button>
       <div style="margin-left:auto;display:flex;gap:4px;background:#f1f5f9;border-radius:6px;padding:2px">
-        <button class="btn btn-sm ${mode === 'list' ? 'btn-primary' : 'btn-outline'}" style="border:none" onclick="renderTickets('list')">列表</button>
-        <button class="btn btn-sm ${mode === 'kanban' ? 'btn-primary' : 'btn-outline'}" style="border:none" onclick="renderTickets('kanban')">看板</button>
+        <button class="btn btn-sm ${mode === 'list' ? 'btn-primary' : 'btn-outline'}" style="border:none" onclick="currentTicketMode='list';renderTickets('list')">列表</button>
+        <button class="btn btn-sm ${mode === 'kanban' ? 'btn-primary' : 'btn-outline'}" style="border:none" onclick="currentTicketMode='kanban';renderTickets('kanban')">看板</button>
       </div>
     </div>
   `);
@@ -1380,19 +1414,19 @@ function renderSystem() {
           <div class="card-body">
             <div class="form-group">
               <label class="form-label">日志保留天数</label>
-              <input class="form-input" type="number" value="${window.DB.config.logRetentionDays}" />
+              <input class="form-input" type="number" id="configLogRetention" value="${window.DB.config.logRetentionDays}" />
             </div>
             <div class="form-group">
               <label class="form-label">截留存留天数</label>
-              <input class="form-input" type="number" value="${window.DB.config.screenshotRetentionDays}" />
+              <input class="form-input" type="number" id="configScreenshotRetention" value="${window.DB.config.screenshotRetentionDays}" />
             </div>
             <div class="form-group">
               <label class="form-label">WebSocket 心跳间隔（秒）</label>
-              <input class="form-input" type="number" value="${window.DB.config.websocketHeartbeat}" />
+              <input class="form-input" type="number" id="configHeartbeat" value="${window.DB.config.websocketHeartbeat}" />
             </div>
             <div class="form-group">
-              <label class="form-label">全局灵敏度</label>
-              <input type="range" min="0.1" max="0.9" step="0.05" value="${window.DB.config.globalSensitivity}" style="width:100%;accent-color:var(--primary)" />
+              <label class="form-label">全局灵敏度：<span id="configSensitivityValue">${window.DB.config.globalSensitivity}</span></label>
+              <input type="range" min="0.1" max="0.9" step="0.05" id="configSensitivity" value="${window.DB.config.globalSensitivity}" oninput="document.getElementById('configSensitivityValue').textContent=this.value" style="width:100%;accent-color:var(--primary)" />
             </div>
             <button class="btn btn-primary" onclick="window.saveSystemConfig()">保存设置</button>
           </div>
@@ -1426,6 +1460,10 @@ function renderSystem() {
 window.renderSystem = renderSystem;
 
 window.saveSystemConfig = () => {
+  window.DB.config.logRetentionDays = parseInt(document.getElementById('configLogRetention').value) || 90;
+  window.DB.config.screenshotRetentionDays = parseInt(document.getElementById('configScreenshotRetention').value) || 7;
+  window.DB.config.websocketHeartbeat = parseInt(document.getElementById('configHeartbeat').value) || 30;
+  window.DB.config.globalSensitivity = parseFloat(document.getElementById('configSensitivity').value) || 0.65;
   toast('系统配置已保存');
 };
 
@@ -1472,7 +1510,14 @@ function batchStreamAction(action) {
     if (!s) return;
     if (action === 'enable') s.status = 'online';
     else if (action === 'disable') s.status = 'offline';
-    else if (action === 'delete') window.DB.streams = window.DB.streams.filter(x => x.id !== id);
+    else if (action === 'delete') {
+      const s = window.DB.streams.find(x => x.id === id);
+      if (s) {
+        window.DB.detections = window.DB.detections.filter(d => d.stream !== s.name);
+        window.DB.alerts = window.DB.alerts.filter(a => a.stream !== s.name);
+      }
+      window.DB.streams = window.DB.streams.filter(x => x.id !== id);
+    }
   });
   selectedStreams.clear();
   toast(`批量${actionNames[action]}成功`);
@@ -1570,8 +1615,13 @@ window.confirmEditStream = confirmEditStream;
 
 function deleteStream(id) {
   if (!confirm('确认删除该视频流？')) return;
+  const s = window.DB.streams.find(x => x.id === id);
+  if (!s) return;
+  // 级联清理关联的检测项目和告警
+  window.DB.detections = window.DB.detections.filter(d => d.stream !== s.name);
+  window.DB.alerts = window.DB.alerts.filter(a => a.stream !== s.name);
   window.DB.streams = window.DB.streams.filter(x => x.id !== id);
-  toast('推流已删除');
+  toast('推流已删除，关联检测项目和告警已清理');
   renderStreams();
 }
 window.deleteStream = deleteStream;
@@ -1637,27 +1687,42 @@ function editDetection(id) {
     <div class="modal-title">检测配置 — ${d.name}</div>
     <div class="form-group">
       <label class="form-label">灵敏度</label>
-      <input type="range" min="0.1" max="0.9" step="0.05" value="${d.sensitivity}" oninput="this.nextElementSibling.textContent=this.value" style="width:100%;accent-color:var(--primary)" />
+      <input type="range" min="0.1" max="0.9" step="0.05" value="${d.sensitivity}" id="editDetSensitivity" oninput="this.nextElementSibling.textContent=this.value" style="width:100%;accent-color:var(--primary)" />
       <span style="font-size:13px;font-weight:600;color:var(--text)">${d.sensitivity}</span>
     </div>
     <div class="form-group">
       <label class="form-label">ROI 坐标配置</label>
-      <textarea class="form-input" rows="4" style="font-family:monospace;font-size:12px">${d.roi}</textarea>
+      <textarea class="form-input" rows="4" id="editDetRoi" style="font-family:monospace;font-size:12px">${d.roi}</textarea>
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal()">取消</button>
-      <button class="btn btn-primary" onclick="closeModal();toast('配置已保存')">保存</button>
+      <button class="btn btn-primary" onclick="confirmEditDetection('${d.id}')">保存</button>
     </div>
   `);
 }
 window.editDetection = editDetection;
 
+window.confirmEditDetection = (id) => {
+  const d = window.DB.detections.find(x => x.id === id);
+  if (!d) return;
+  d.sensitivity = parseFloat(document.getElementById('editDetSensitivity').value) || d.sensitivity;
+  d.roi = document.getElementById('editDetRoi').value || d.roi;
+  closeModal();
+  toast('检测配置已保存');
+  renderDetection();
+};
+
 // ---- Role Permissions ----
 
 function applyRolePermissions() {
-  // 仿真环境默认显示所有导航项
+  // 查找当前用户角色，按权限控制导航显示
+  const currentUser = window.DB.users.find(u => u.name === '管理员');
+  if (!currentUser) return;
+  const role = window.DB.roles.find(r => r.name === currentUser.role);
+  if (!role) return;
   document.querySelectorAll('.nav-item').forEach(item => {
-    item.style.display = '';
+    const page = item.dataset.page;
+    item.style.display = role.perms.includes(page) ? '' : 'none';
   });
 }
 window.applyRolePermissions = applyRolePermissions;
@@ -1685,12 +1750,12 @@ function simulateAlert() {
     renderDashboard();
   }
 
-  // Update nav badge
-  const badge = document.querySelector('[data-page="alerts"] .nav-badge');
-  if (badge) {
-    const count = window.DB.alerts.filter(a => a.status === 'pending').length;
-    badge.textContent = count;
-  }
+  // Update nav badges
+  updateNavBadges();
+
+  // 新告警到达时点亮通知红点
+  const notifDot = document.querySelector('.notif-dot');
+  if (notifDot) notifDot.style.display = 'block';
 
   // Auto-create ticket for high confidence
   if (conf >= 80) {
@@ -1705,13 +1770,10 @@ function simulateAlert() {
         desc: '', photos: [],
       });
       // 实时更新所有 badge
-      const aBadge = document.querySelector('[data-page="alerts"] .nav-badge');
-      if (aBadge) aBadge.textContent = window.DB.alerts.filter(a => a.status === 'pending').length;
-      const tBadge = document.querySelector('[data-page="tickets"] .nav-badge');
-      if (tBadge) tBadge.textContent = window.DB.tickets.filter(t => t.status === 'pending_assign' || t.status === 'processing').length;
+      updateNavBadges();
       // 如果当前在告警页面，实时追加新告警到表格
       if (currentPage === 'alerts') renderAlerts();
-      if (currentPage === 'tickets') renderTickets(document.querySelector('.tab.active')?.textContent?.includes('看板') ? 'kanban' : 'list');
+      if (currentPage === 'tickets') renderTickets(currentTicketMode);
       addTicketLog(ticketId, `自动创建 ${ticketTitle}`);
       toast(`高置信告警自动创建工单: ${ticketId}`, 'info');
     }, 2000);
@@ -1719,6 +1781,16 @@ function simulateAlert() {
 }
 
 // ===================== INIT =====================
+
+function updateNavBadges() {
+  const pendingAlerts = window.DB.alerts.filter(a => a.status === 'pending').length;
+  const activeTickets = window.DB.tickets.filter(t => t.status === 'pending_assign' || t.status === 'processing').length;
+  const aBadge = document.querySelector('[data-page="alerts"] .nav-badge');
+  const tBadge = document.querySelector('[data-page="tickets"] .nav-badge');
+  if (aBadge) aBadge.textContent = pendingAlerts;
+  if (tBadge) tBadge.textContent = activeTickets;
+}
+window.updateNavBadges = updateNavBadges;
 
 document.addEventListener('DOMContentLoaded', () => {
   // Sidebar navigation
@@ -1731,7 +1803,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Sidebar toggle (mobile)
+  // Notification bell
+  document.getElementById('notifBtn').addEventListener('click', () => {
+    const pending = window.DB.alerts.filter(a => a.status === 'pending');
+    modal(html`
+      <div class="modal-title">通知消息</div>
+      <div style="margin-bottom:12px;font-size:13px;color:var(--text-secondary)">您有 ${pending.length} 条待处理告警</div>
+      ${pending.slice(0, 5).map(a => html`
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <strong>${a.type}</strong> @ ${a.stream}
+          <span style="color:var(--text-secondary);float:right">${a.time}</span>
+        </div>
+      `).join('')}
+      ${pending.length > 5 ? html`<div style="padding:8px 0;font-size:12px;color:var(--text-secondary)">...还有 ${pending.length - 5} 条</div>` : ''}
+      ${pending.length === 0 ? html`<div style="padding:20px;text-align:center;font-size:13px;color:var(--text-secondary)">暂无新通知</div>` : ''}
+      <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>
+    `);
+    // 点击后消除红点
+    const dot = document.querySelector('.notif-dot');
+    if (dot) dot.style.display = pending.length === 0 ? 'none' : 'block';
+  });
   document.getElementById('sidebarToggle').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('open');
   });
@@ -1755,6 +1846,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 应用角色权限（控制导航菜单显示）
   applyRolePermissions();
+
+  // 更新导航角标
+  updateNavBadges();
 
   // 自动执行数据清理（启动时和每天一次）
   window.runDataCleanup();
