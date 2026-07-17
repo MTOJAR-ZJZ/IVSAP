@@ -24,11 +24,7 @@ function renderStreams() {
               <tr>
                 <th style="width:36px"><input type="checkbox" onchange="toggleAllStreams(this.checked)" /></th>
                 <th>流名称</th>
-                <th>推流地址</th>
-                <th>播放地址</th>
                 <th>协议</th>
-                <th>分辨率</th>
-                <th>帧率</th>
                 <th>截图间隔</th>
                 <th>状态</th>
                 <th>操作</th>
@@ -39,13 +35,7 @@ function renderStreams() {
                 <tr>
                   <td><input type="checkbox" data-id="${s.id}" onchange="toggleStream('${s.id}')" ${selectedStreams.has(s.id) ? 'checked' : ''} /></td>
                   <td><strong>${s.name}</strong></td>
-                  <td style="font-size:12px;color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis">${s.addr}</td>
-                  <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis">
-                    ${s.playUrl ? html`<a href="${s.playUrl}" target="_blank" title="点击播放" style="color:var(--info)">${s.playUrl}</a>` : '<span style="color:var(--text-secondary)">未配置</span>'}
-                  </td>
                   <td>${s.protocol}</td>
-                  <td>${s.res}</td>
-                  <td>${s.fps}FPS</td>
                   <td><span class="badge badge-info" style="font-size:11px;background:#eff6ff;color:var(--info);border:1px solid #bfdbfe">${s.captureInterval || 5}s/次</span></td>
                   <td>
                     <span class="badge badge-${s.status === 'online' ? 'online' : 'offline'}">
@@ -129,15 +119,6 @@ function showAddStream() {
       <label class="form-label">流名称 *</label>
       <input class="form-input" placeholder="如：园区东门" id="addStreamName" />
     </div>
-    <div class="form-group">
-      <label class="form-label">推流地址 *</label>
-      <input class="form-input" placeholder="rtmp://..." id="addStreamAddr" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">播放地址</label>
-      <input class="form-input" placeholder="http://...（浏览器可播放的流地址，如 HTTP-FLV/HLS）" id="addStreamPlayUrl" />
-      <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">浏览器通过此地址播放视频，留空则显示占位符</div>
-    </div>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">协议</label>
@@ -171,12 +152,11 @@ window.showAddStream = showAddStream;
 
 function saveStream() {
   const name = document.getElementById('addStreamName').value;
-  const addr = document.getElementById('addStreamAddr').value;
-  if (!name || !addr) { toast('请填写流名称和推流地址', 'error'); return; }
+  if (!name) { toast('请输入流名称', 'error'); return; }
   window.DB.streams.push({
     id: 'S' + String(window.DB.streams.length + 1).padStart(3, '0'),
-    name, addr,
-    playUrl: document.getElementById('addStreamPlayUrl').value.trim() || '',
+    name, addr: '',
+    playUrl: '',
     protocol: document.getElementById('addStreamProtocol').value,
     res: document.getElementById('addStreamRes').value,
     fps: parseInt(document.getElementById('addStreamFps').value) || 25,
@@ -186,7 +166,7 @@ function saveStream() {
   });
   closeModal();
   toast(`推流「${name}」创建成功`);
-  if (window.API_SAVE) window.API_SAVE.stream({ name, addr, playUrl: document.getElementById('addStreamPlayUrl').value.trim() || '', protocol: document.getElementById('addStreamProtocol').value, res: document.getElementById('addStreamRes').value, fps: parseInt(document.getElementById('addStreamFps').value) || 25, captureInterval: parseInt(document.getElementById('addStreamCaptureInterval').value) || 5, codec: 'H.264', status: 'online' }).catch(e => console.warn('[API]', e.message));
+  if (window.API_SAVE) window.API_SAVE.stream({ name, addr: '', playUrl: '', protocol: document.getElementById('addStreamProtocol').value, res: document.getElementById('addStreamRes').value, fps: parseInt(document.getElementById('addStreamFps').value) || 25, captureInterval: parseInt(document.getElementById('addStreamCaptureInterval').value) || 5, codec: 'H.264', status: 'online' }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderStreams();
 }
@@ -200,15 +180,6 @@ function editStream(id) {
     <div class="form-group">
       <label class="form-label">流名称</label>
       <input class="form-input" value="${s.name}" id="editStreamName" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">推流地址</label>
-      <input class="form-input" value="${s.addr}" id="editStreamAddr" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">播放地址</label>
-      <input class="form-input" placeholder="http://...（浏览器可播放的流地址）" value="${s.playUrl || ''}" id="editStreamPlayUrl" />
-      <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">浏览器通过此地址播放视频，留空则显示占位符</div>
     </div>
     <div class="form-group">
       <label class="form-label">截图间隔（秒）</label>
@@ -227,8 +198,6 @@ function confirmEditStream(id) {
   const s = window.DB.streams.find(x => x.id === id);
   if (!s) return;
   s.name = document.getElementById('editStreamName').value || s.name;
-  s.addr = document.getElementById('editStreamAddr').value || s.addr;
-  s.playUrl = document.getElementById('editStreamPlayUrl').value.trim() || '';
   s.captureInterval = parseInt(document.getElementById('editStreamCaptureInterval').value) || 5;
   closeModal();
   toast('推流信息已更新');
