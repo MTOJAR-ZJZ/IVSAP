@@ -175,6 +175,10 @@ function editStream(id) {
       <input class="form-input" value="${s.name}" id="editStreamName" />
     </div>
     <div class="form-group">
+      <label class="form-label">源地址</label>
+      <input class="form-input" value="${s.addr || ''}" id="editStreamAddr" />
+    </div>
+    <div class="form-group">
       <label class="form-label">截图间隔（秒）</label>
       <input class="form-input" type="number" value="${s.captureInterval || 5}" min="1" max="3600" id="editStreamCaptureInterval" />
       <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">每隔 N 秒截取一帧画面用于 AI 检测分析</div>

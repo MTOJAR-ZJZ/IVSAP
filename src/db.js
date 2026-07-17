@@ -5,7 +5,7 @@
 
 window.DB = {
   streams: [
-    { id: 'S001', name: '园区北门主入口', addr: 'http://localhost:8000/live/stream.flv', playUrl: 'http://localhost:8000/live/stream.flv', protocol: 'HTTP-FLV', res: '1080P', fps: 25, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-14 09:00' },
+    { id: 'S001', name: '001', addr: 'http://localhost:8000/live/stream.flv', playUrl: 'http://localhost:8000/live/stream.flv', protocol: 'HTTP-FLV', res: '1080P', fps: 25, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-14 09:00' },
     { id: 'S002', name: '仓库A区东侧', addr: 'rtsp://192.168.1.11:554/stream2', playUrl: 'http://localhost:8000/live/stream2.flv', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', captureInterval: 3, createdAt: '2026-07-14 09:05' },
     { id: 'S003', name: '厂房西门通道', addr: 'rtmp://192.168.1.12/live/stream3', playUrl: '', protocol: 'RTMP', res: '720P', fps: 30, codec: 'H.264', status: 'offline', captureInterval: 5, createdAt: '2026-07-13 14:00' },
     { id: 'S004', name: '停车场监控', addr: 'rtsp://192.168.1.13:554/stream4', playUrl: '', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.264', status: 'error', captureInterval: 10, createdAt: '2026-07-13 10:30' },
