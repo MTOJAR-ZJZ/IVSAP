@@ -5,12 +5,12 @@
 
 window.DB = {
   streams: [
-    { id: 'S001', name: '园区北门主入口', addr: 'rtsp://192.168.1.10:554/stream1', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-14 09:00' },
-    { id: 'S002', name: '仓库A区东侧', addr: 'rtsp://192.168.1.11:554/stream2', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', captureInterval: 3, createdAt: '2026-07-14 09:05' },
-    { id: 'S003', name: '厂房西门通道', addr: 'rtmp://192.168.1.12/live/stream3', protocol: 'RTMP', res: '720P', fps: 30, codec: 'H.264', status: 'offline', captureInterval: 5, createdAt: '2026-07-13 14:00' },
-    { id: 'S004', name: '停车场监控', addr: 'rtsp://192.168.1.13:554/stream4', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.264', status: 'error', captureInterval: 10, createdAt: '2026-07-13 10:30' },
-    { id: 'S005', name: '办公楼大厅', addr: 'http-flv://192.168.1.14:8080/live/stream5', protocol: 'HTTP-FLV', res: '720P', fps: 15, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-12 16:00' },
-    { id: 'S006', name: '研发中心走廊', addr: 'rtsp://192.168.1.15:554/stream6', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', captureInterval: 3, createdAt: '2026-07-12 11:00' },
+    { id: 'S001', name: '园区北门主入口', addr: 'http://localhost:8000/live/stream.flv', playUrl: 'http://localhost:8000/live/stream.flv', protocol: 'HTTP-FLV', res: '1080P', fps: 25, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-14 09:00' },
+    { id: 'S002', name: '仓库A区东侧', addr: 'rtsp://192.168.1.11:554/stream2', playUrl: 'http://localhost:8000/live/stream2.flv', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', captureInterval: 3, createdAt: '2026-07-14 09:05' },
+    { id: 'S003', name: '厂房西门通道', addr: 'rtmp://192.168.1.12/live/stream3', playUrl: '', protocol: 'RTMP', res: '720P', fps: 30, codec: 'H.264', status: 'offline', captureInterval: 5, createdAt: '2026-07-13 14:00' },
+    { id: 'S004', name: '停车场监控', addr: 'rtsp://192.168.1.13:554/stream4', playUrl: '', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.264', status: 'error', captureInterval: 10, createdAt: '2026-07-13 10:30' },
+    { id: 'S005', name: '办公楼大厅', addr: 'http://localhost:8080/live/stream5.flv', playUrl: 'http://localhost:8000/live/stream5.flv', protocol: 'HTTP-FLV', res: '720P', fps: 15, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-12 16:00' },
+    { id: 'S006', name: '研发中心走廊', addr: 'rtsp://192.168.1.15:554/stream6', playUrl: '', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', captureInterval: 3, createdAt: '2026-07-12 11:00' },
   ],
 
   detections: [
@@ -106,9 +106,19 @@ window.DB = {
 
 // ===================== 数据持久化 =====================
 // 将数据保存至 localStorage，刷新页面后恢复
+// 版本号：修改种子数据时递增此值，自动清除旧缓存
 
 (function() {
   const STORAGE_KEY = 'ivsap_db_data';
+  const VERSION_KEY = 'ivsap_db_version';
+  const DB_VERSION = 2; // 种子数据版本，修改后请递增
+
+  // 版本不匹配时清除旧缓存，使用最新的种子数据
+  const savedVersion = parseInt(localStorage.getItem(VERSION_KEY), 10);
+  if (savedVersion !== DB_VERSION) {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(VERSION_KEY, String(DB_VERSION));
+  }
 
   // 从 localStorage 恢复数据
   try {
@@ -126,17 +136,24 @@ window.DB = {
         }
       });
     }
-  } catch(e) {}
+  } catch(e) { console.warn('DB restore error:', e); }
 
-  // 保存数据到 localStorage
+  // 保存数据到 localStorage（防抖：200ms 内多次调用只存一次）
+  let _saveTimer;
   window.DB._save = function() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(window.DB));
-    } catch(e) {}
+    if (_saveTimer) clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(window.DB));
+      } catch(e) { console.warn('DB save error:', e); }
+    }, 200);
   };
 
-  // 页面关闭/刷新时保存
-  window.addEventListener('beforeunload', () => window.DB._save());
-  // 定期自动保存（每 15 秒）
-  setInterval(() => window.DB._save(), 15000);
+  // 页面关闭/刷新时立即保存（跳过防抖）
+  window.addEventListener('beforeunload', () => {
+    if (_saveTimer) clearTimeout(_saveTimer);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(window.DB));
+  });
+  // 定期自动保存（每 30 秒兜底）
+  setInterval(() => window.DB._save(), 30000);
 })();

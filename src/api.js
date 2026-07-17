@@ -109,6 +109,7 @@ async function loadAllData() {
     };
   } catch (e) {
     console.error('Failed to load data:', e);
+    throw e; // 向上传播错误，让 autoInit 的 .catch() 能正确触发降级逻辑
   }
 }
 
@@ -188,6 +189,4 @@ window.API_SAVE = {
   async saveTicketRules(data) { return request('PUT', '/system/ticket-rules', data); },
   async updateApiModel(id, data) { return request('PUT', '/system/api-models/' + id, data); },
   async setDefaultModel(id) { return request('POST', '/system/api-models/' + id + '/default'); },
-
-  async addLog(log) { /* handled by backend */ },
 };
