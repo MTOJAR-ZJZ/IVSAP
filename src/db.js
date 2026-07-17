@@ -51,8 +51,8 @@ window.DB = {
   ],
 
   roles: [
-    { id: 'R001', name: '系统管理员', preset: true, perms: ['dashboard','streams','detection','alerts','tickets','users','system'] },
-    { id: 'R002', name: '运维主管', preset: true, perms: ['dashboard','streams','detection','alerts','tickets','users'] },
+    { id: 'R001', name: '系统管理员', preset: true, perms: ['dashboard','streams','detection','algorithms','alerts','tickets','users','system'] },
+    { id: 'R002', name: '运维主管', preset: true, perms: ['dashboard','streams','detection','algorithms','alerts','tickets','users'] },
     { id: 'R003', name: '值班人员', preset: true, perms: ['dashboard','alerts','tickets'] },
     { id: 'R004', name: '业务分析师', preset: true, perms: ['dashboard','alerts'] },
   ],
