@@ -187,6 +187,7 @@ function renderStreams() {
                 <th>协议</th>
                 <th>分辨率</th>
                 <th>帧率</th>
+                <th>截图间隔</th>
                 <th>状态</th>
                 <th>操作</th>
               </tr>
@@ -200,6 +201,7 @@ function renderStreams() {
                   <td>${s.protocol}</td>
                   <td>${s.res}</td>
                   <td>${s.fps}FPS</td>
+                  <td><span class="badge badge-info" style="font-size:11px;background:#eff6ff;color:var(--info);border:1px solid #bfdbfe">${s.captureInterval || 5}s/次</span></td>
                   <td>
                     <span class="badge badge-${s.status === 'online' ? 'online' : 'offline'}">
                       <span class="badge-dot"></span>${s.status === 'online' ? '在线' : '离线'}
@@ -567,7 +569,7 @@ window.showTicketDetail = (id) => {
       <div style="display:flex;gap:12px;font-size:13px;color:var(--text-secondary)">
         <span>状态：<strong>${statusMap[t.status]}</strong></span>
         <span>责任人：<strong>${t.assignee}</strong></span>
-        <span>SLA：<strong>${t.sla}</strong></span>
+        <span>工单处理时限：<strong>${t.sla}</strong></span>
       </div>
     </div>
     <div style="background:rgba(255,255,255,.03);padding:14px;border-radius:8px;margin-bottom:12px">
@@ -1236,7 +1238,7 @@ function renderTickets(mode) {
                   <th>优先级</th>
                   <th>状态</th>
                   <th>责任人</th>
-                  <th>SLA</th>
+                  <th>工单处理时限</th>
                   <th>创建时间</th>
                   <th>操作</th>
                 </tr>
@@ -1267,6 +1269,34 @@ function renderTickets(mode) {
     `;
     container.innerHTML += listHtml;
   }
+
+  // 操作日志（两种视图共用）
+  const container = document.getElementById('pageContainer');
+  const logHtml = html`
+    <div class="card" style="margin-top:16px">
+      <div class="card-header"><span class="card-title">操作日志</span></div>
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap" style="max-height:300px;overflow-y:auto">
+          <table>
+            <thead>
+              <tr><th>时间</th><th>班次</th><th>操作人</th><th>操作内容</th></tr>
+            </thead>
+            <tbody>
+              ${window.DB.ticketLogs.slice(0, 20).map(log => html`
+                <tr>
+                  <td style="font-size:12px;color:var(--text-secondary)">${log.date} ${log.time}</td>
+                  <td>${log.shift}</td>
+                  <td>${log.operator}</td>
+                  <td style="font-size:12px">${log.action}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+  container.innerHTML += logHtml;
 }
 window.renderTickets = renderTickets;
 
@@ -1505,28 +1535,6 @@ function renderSystem() {
             <button class="btn btn-primary" onclick="window.saveSystemConfig()">保存设置</button>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">操作日志</span></div>
-          <div class="card-body" style="padding:0">
-            <div class="table-wrap" style="max-height:300px;overflow-y:auto">
-              <table>
-                <thead>
-                  <tr><th>时间</th><th>班次</th><th>操作人</th><th>操作内容</th></tr>
-                </thead>
-                <tbody>
-                  ${window.DB.ticketLogs.slice(0, 20).map(log => html`
-                    <tr>
-                      <td style="font-size:12px;color:var(--text-secondary)">${log.date} ${log.time}</td>
-                      <td>${log.shift}</td>
-                      <td>${log.operator}</td>
-                      <td style="font-size:12px">${log.action}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   `);
@@ -1682,6 +1690,11 @@ function showAddStream() {
       <label class="form-label">帧率</label>
       <input class="form-input" type="number" value="25" id="addStreamFps" />
     </div>
+    <div class="form-group">
+      <label class="form-label">截图间隔（秒）</label>
+      <input class="form-input" type="number" value="5" min="1" max="3600" id="addStreamCaptureInterval" />
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">每隔 N 秒截取一帧画面用于 AI 检测分析</div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal()">取消</button>
       <button class="btn btn-primary" onclick="saveStream()">创建</button>
@@ -1700,6 +1713,7 @@ function saveStream() {
     protocol: document.getElementById('addStreamProtocol').value,
     res: document.getElementById('addStreamRes').value,
     fps: parseInt(document.getElementById('addStreamFps').value) || 25,
+    captureInterval: parseInt(document.getElementById('addStreamCaptureInterval').value) || 5,
     codec: 'H.264', status: 'online',
     createdAt: new Date().toLocaleString('zh-CN'),
   });
@@ -1723,6 +1737,11 @@ function editStream(id) {
       <label class="form-label">推流地址</label>
       <input class="form-input" value="${s.addr}" id="editStreamAddr" />
     </div>
+    <div class="form-group">
+      <label class="form-label">截图间隔（秒）</label>
+      <input class="form-input" type="number" value="${s.captureInterval || 5}" min="1" max="3600" id="editStreamCaptureInterval" />
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">每隔 N 秒截取一帧画面用于 AI 检测分析</div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal()">取消</button>
       <button class="btn btn-primary" onclick="confirmEditStream('${id}')">保存</button>
@@ -1736,6 +1755,7 @@ function confirmEditStream(id) {
   if (!s) return;
   s.name = document.getElementById('editStreamName').value || s.name;
   s.addr = document.getElementById('editStreamAddr').value || s.addr;
+  s.captureInterval = parseInt(document.getElementById('editStreamCaptureInterval').value) || 5;
   closeModal();
   toast('推流信息已更新');
   window.DB._save();

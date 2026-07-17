@@ -5,12 +5,12 @@
 
 window.DB = {
   streams: [
-    { id: 'S001', name: '园区北门主入口', addr: 'rtsp://192.168.1.10:554/stream1', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.264', status: 'online', createdAt: '2026-07-14 09:00' },
-    { id: 'S002', name: '仓库A区东侧', addr: 'rtsp://192.168.1.11:554/stream2', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', createdAt: '2026-07-14 09:05' },
-    { id: 'S003', name: '厂房西门通道', addr: 'rtmp://192.168.1.12/live/stream3', protocol: 'RTMP', res: '720P', fps: 30, codec: 'H.264', status: 'offline', createdAt: '2026-07-13 14:00' },
-    { id: 'S004', name: '停车场监控', addr: 'rtsp://192.168.1.13:554/stream4', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.264', status: 'error', createdAt: '2026-07-13 10:30' },
-    { id: 'S005', name: '办公楼大厅', addr: 'http-flv://192.168.1.14:8080/live/stream5', protocol: 'HTTP-FLV', res: '720P', fps: 15, codec: 'H.264', status: 'online', createdAt: '2026-07-12 16:00' },
-    { id: 'S006', name: '研发中心走廊', addr: 'rtsp://192.168.1.15:554/stream6', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', createdAt: '2026-07-12 11:00' },
+    { id: 'S001', name: '园区北门主入口', addr: 'rtsp://192.168.1.10:554/stream1', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-14 09:00' },
+    { id: 'S002', name: '仓库A区东侧', addr: 'rtsp://192.168.1.11:554/stream2', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', captureInterval: 3, createdAt: '2026-07-14 09:05' },
+    { id: 'S003', name: '厂房西门通道', addr: 'rtmp://192.168.1.12/live/stream3', protocol: 'RTMP', res: '720P', fps: 30, codec: 'H.264', status: 'offline', captureInterval: 5, createdAt: '2026-07-13 14:00' },
+    { id: 'S004', name: '停车场监控', addr: 'rtsp://192.168.1.13:554/stream4', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.264', status: 'error', captureInterval: 10, createdAt: '2026-07-13 10:30' },
+    { id: 'S005', name: '办公楼大厅', addr: 'http-flv://192.168.1.14:8080/live/stream5', protocol: 'HTTP-FLV', res: '720P', fps: 15, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-12 16:00' },
+    { id: 'S006', name: '研发中心走廊', addr: 'rtsp://192.168.1.15:554/stream6', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', captureInterval: 3, createdAt: '2026-07-12 11:00' },
   ],
 
   detections: [
