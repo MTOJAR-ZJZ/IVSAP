@@ -191,25 +191,20 @@ function editStream(id) {
 }
 window.editStream = editStream;
 
-async function confirmEditStream(id) {
+function confirmEditStream(id) {
   const s = window.DB.streams.find(x => x.id === id);
   if (!s) return;
   s.name = document.getElementById('editStreamName').value || s.name;
   s.addr = document.getElementById('editStreamAddr').value || '';
   s.captureInterval = parseInt(document.getElementById('editStreamCaptureInterval').value) || 5;
   closeModal();
-  // 同步写入数据库（后端字段为 snake_case）
+  // 尝试同步到后端数据库（不阻塞本地更新）
   if (window.API_SAVE) {
-    try {
-      await window.API_SAVE.updateStream(id, {
-        name: s.name, addr: s.addr, play_url: s.playUrl || '',
-        protocol: s.protocol || '', res: s.res || '1080P', fps: s.fps || 25,
-        capture_interval: s.captureInterval, codec: s.codec || 'H.264', status: s.status || 'online',
-      });
-    } catch (e) {
-      toast('保存失败: ' + e.message, 'error');
-      return;
-    }
+    window.API_SAVE.updateStream(id, {
+      name: s.name, addr: s.addr, play_url: s.playUrl || '',
+      protocol: s.protocol || '', res: s.res || '1080P', fps: s.fps || 25,
+      capture_interval: s.captureInterval, codec: s.codec || 'H.264', status: s.status || 'online',
+    }).catch(e => console.warn('[API] updateStream失败:', e.message));
   }
   toast('推流信息已更新');
   window.DB._save();
