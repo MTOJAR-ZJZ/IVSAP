@@ -66,6 +66,7 @@ window.saveSystemConfig = () => {
   window.DB.config.screenshotRetentionDays = parseInt(document.getElementById('configScreenshotRetention').value) || 7;
   window.DB.config.websocketHeartbeat = parseInt(document.getElementById('configHeartbeat').value) || 30;
   window.DB.config.globalSensitivity = parseFloat(document.getElementById('configSensitivity').value) || 0.65;
+  if (window.API_SAVE) window.API_SAVE.saveConfig(window.DB.config).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast('系统配置已保存');
 };
@@ -109,6 +110,7 @@ window.saveEditApiModel = (id) => {
   const newKey = document.getElementById('editModelKey').value;
   if (newKey) m.apiKey = newKey;
   closeModal();
+  if (window.API_SAVE) window.API_SAVE.updateApiModel(id, { name: m.name, provider: m.provider, apiUrl: m.apiUrl, apiKey: m.apiKey }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast(`模型「${m.name}」配置已更新`);
   renderSystem();
@@ -116,6 +118,7 @@ window.saveEditApiModel = (id) => {
 
 window.setDefaultApiModel = (id) => {
   window.DB.apiModels.forEach(m => { m.isDefault = m.id === id; });
+  if (window.API_SAVE) window.API_SAVE.setDefaultModel(id).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast('默认模型已切换');
   renderSystem();

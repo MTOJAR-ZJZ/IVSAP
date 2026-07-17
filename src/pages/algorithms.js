@@ -111,6 +111,7 @@ window.saveAlgoPrompt = (index) => {
   }
   window.DB.algoTypes[index].name = newName;
   window.DB.algoTypes[index].prompt = document.getElementById('algoPrompt').value;
+  if (window.API_SAVE) window.API_SAVE.updateAlgo(index, { name: newName, prompt: window.DB.algoTypes[index].prompt }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast('算法已保存');
   if (window.AppState.currentPage === 'algorithms') renderAlgorithms(); else window.showAlgoManager();
@@ -122,6 +123,7 @@ window.addAlgoType = () => {
   if (window.DB.algoTypes.some(a => (typeof a === 'string' ? a : a.name) === name)) { toast('该算法已存在', 'error'); return; }
   window.DB.algoTypes.push({ name, prompt: '' });
   document.getElementById('newAlgoName').value = '';
+  if (window.API_SAVE) window.API_SAVE.addAlgo(name).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast(`算法「${name}」已添加`);
   window.showAlgoManager();
@@ -133,6 +135,7 @@ window.addAlgoFromPage = () => {
   if (window.DB.algoTypes.some(a => (typeof a === 'string' ? a : a.name) === name)) { toast('该算法已存在', 'error'); return; }
   window.DB.algoTypes.push({ name, prompt: '' });
   document.getElementById('algoPageNewName').value = '';
+  if (window.API_SAVE) window.API_SAVE.addAlgo(name).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast(`算法「${name}」已添加`);
   renderAlgorithms();
@@ -147,6 +150,7 @@ window.removeAlgoType = (index) => {
     window.DB.detections.forEach(d => { if (d.algo === name) d.algo = '未配置'; });
   }
   window.DB.algoTypes.splice(index, 1);
+  if (window.API_SAVE) window.API_SAVE.deleteAlgo(index).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast(`算法「${name}」已移除`);
   if (window.AppState.currentPage === 'algorithms') renderAlgorithms(); else window.showAlgoManager();

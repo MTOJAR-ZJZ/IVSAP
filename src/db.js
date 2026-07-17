@@ -11,6 +11,8 @@ window.DB = {
     { id: 'S004', name: '停车场监控', addr: 'rtsp://192.168.1.13:554/stream4', playUrl: '', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.264', status: 'error', captureInterval: 10, createdAt: '2026-07-13 10:30' },
     { id: 'S005', name: '办公楼大厅', addr: 'http://localhost:8080/live/stream5.flv', playUrl: 'http://localhost:8000/live/stream5.flv', protocol: 'HTTP-FLV', res: '720P', fps: 15, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-12 16:00' },
     { id: 'S006', name: '研发中心走廊', addr: 'rtsp://192.168.1.15:554/stream6', playUrl: '', protocol: 'RTSP', res: '1080P', fps: 25, codec: 'H.265', status: 'online', captureInterval: 3, createdAt: '2026-07-12 11:00' },
+    { id: 'S007', name: '食堂后厨', addr: 'rtsp://192.168.1.16:554/stream7', playUrl: 'https://live.example.com/hls/stream7.m3u8', protocol: 'HLS', res: '1080P', fps: 25, codec: 'H.264', status: 'online', captureInterval: 5, createdAt: '2026-07-15 09:00' },
+    { id: 'S008', name: '实验楼A座', addr: 'rtsp://192.168.1.17:554/stream8', playUrl: 'webrtc://192.168.1.100:1985/live/stream8', protocol: 'WebRTC', res: '4K', fps: 30, codec: 'H.265', status: 'online', captureInterval: 5, createdAt: '2026-07-15 09:00' },
   ],
 
   detections: [
@@ -111,7 +113,7 @@ window.DB = {
 (function() {
   const STORAGE_KEY = 'ivsap_db_data';
   const VERSION_KEY = 'ivsap_db_version';
-  const DB_VERSION = 2; // 种子数据版本，修改后请递增
+  const DB_VERSION = 3; // 种子数据版本，修改后请递增
 
   // 版本不匹配时清除旧缓存，使用最新的种子数据
   const savedVersion = parseInt(localStorage.getItem(VERSION_KEY), 10);

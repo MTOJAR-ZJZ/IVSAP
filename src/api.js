@@ -104,7 +104,7 @@ async function loadAllData() {
         globalSensitivity: config.globalSensitivity || 0.65,
         ticketRules: ticketRules || {},
       },
-      _save: async () => { /* no-op — backend saves immediately */ },
+      _save: async () => { try { localStorage.setItem('ivsap_db_data', JSON.stringify(window.DB)); } catch(e) { /* ignore */ } },
       _token: token,
     };
   } catch (e) {

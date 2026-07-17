@@ -185,6 +185,7 @@ window.saveTicket = () => {
   });
   closeModal();
   toast('工单创建成功');
+  if (window.API_SAVE) window.API_SAVE.createTicket({ id: ticketId, title, priority: document.getElementById('ticketPriority').value, status: 'pending_assign', assignee: '-', alerts: document.getElementById('ticketAlert').value ? [document.getElementById('ticketAlert').value] : [], sla: '-', createdAt: new Date().toLocaleString('zh-CN'), desc: document.getElementById('ticketDesc').value || '', photos: [] }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderTickets('list');
   updateNavBadges();
@@ -265,6 +266,7 @@ window.doAssign = (id) => {
   closeModal();
   addTicketLog(t.id, `分配 ${t.title} 给 ${user}`);
   toast(`工单已分配给 ${user}，通知已发送`);
+  if (window.API_SAVE) window.API_SAVE.assignTicket(id, user).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderTickets('list');
   updateNavBadges();
@@ -278,6 +280,7 @@ window.submitTicketFeedback = (id) => {
   t.sla = '待验收';
   addTicketLog(t.id, `提交验收 ${t.title}`);
   toast('处置完成，已提交验收');
+  if (window.API_SAVE) window.API_SAVE.updateTicketStatus(id, t.status, t.desc).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderTickets('list');
   updateNavBadges();
@@ -289,6 +292,7 @@ window.submitTicketReview = (id) => {
   t.sla = '待验收';
   addTicketLog(t.id, `提交验收 ${t.title}`);
   toast('已提交验收申请');
+  if (window.API_SAVE) window.API_SAVE.updateTicketStatus(id, 'review', t.desc).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderTickets('list');
   updateNavBadges();
@@ -300,6 +304,7 @@ window.approveTicket = (id) => {
   t.sla = '已完成';
   addTicketLog(t.id, `验收通过 ${t.title}`);
   toast('工单验收通过，已关闭');
+  if (window.API_SAVE) window.API_SAVE.updateTicketStatus(id, 'closed', t.desc).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderTickets('list');
   updateNavBadges();
@@ -311,6 +316,7 @@ window.rejectTicket = (id) => {
   t.sla = '已驳回-请重试';
   addTicketLog(t.id, `驳回 ${t.title}`);
   toast('工单已驳回，返回处理中');
+  if (window.API_SAVE) window.API_SAVE.updateTicketStatus(id, 'processing', t.desc).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderTickets('list');
   updateNavBadges();
@@ -361,6 +367,7 @@ window.saveTicketRules = () => {
     assignStrategy: document.getElementById('ruleStrategy').value,
   };
   closeModal();
+  if (window.API_SAVE) window.API_SAVE.saveTicketRules(window.DB.config.ticketRules).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast('规则保存成功', 'success');
 };

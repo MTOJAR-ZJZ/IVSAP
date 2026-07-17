@@ -157,6 +157,7 @@ function confirmAddDetection() {
   });
   closeModal();
   toast('检测项目创建成功');
+  if (window.API_SAVE) window.API_SAVE.detection({ name, dataType, stream, algo: document.getElementById('addDetAlgo').value, roi: '矩形', sensitivity: 0.65, status: 'running' }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderDetection();
 }
@@ -167,6 +168,7 @@ function toggleDetection(id) {
   if (!d) return;
   d.status = d.status === 'running' ? 'stopped' : 'running';
   toast(`检测项目「${d.name}」已${d.status === 'running' ? '启动' : '停止'}`);
+  if (window.API_SAVE) window.API_SAVE.toggleDetection(id).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderDetection();
 }
@@ -242,6 +244,7 @@ window.confirmEditDetection = (id) => {
   d.sensitivity = parseFloat(document.getElementById('editDetSensitivity').value) || d.sensitivity;
   d.roi = document.getElementById('editDetRoi').value || d.roi;
   closeModal();
+  if (window.API_SAVE) window.API_SAVE.updateDetection(id, { dataType: d.dataType, stream: d.stream, algo: d.algo, sensitivity: d.sensitivity, roi: d.roi }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast('检测配置已保存');
   renderDetection();

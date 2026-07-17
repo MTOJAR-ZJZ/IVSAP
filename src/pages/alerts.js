@@ -114,6 +114,7 @@ window.handleAlert = (id, action) => {
     if (note) a.note = note;
   }
   toast(`告警 ${a.id} 标记为 ${actionNames[action]}`);
+  if (window.API_SAVE) window.API_SAVE.updateAlertStatus(id, action, a.note || '').catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderAlerts();
   updateNavBadges();
@@ -142,6 +143,7 @@ window.batchCreateTicket = () => {
   });
   selectedAlertList.forEach(a => { a.status = 'confirmed'; a.note = `已合并为工单 ${ticketId}`; });
   selectedAlerts.clear();
+  if (window.API_SAVE) window.API_SAVE.createTicket({ id: ticketId, title, priority: 'mid', status: 'pending_assign', assignee: '-', alerts: alertIds, sla: '-', createdAt: new Date().toLocaleString('zh-CN'), desc: '', photos: [] }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast(`合并创建工单成功：${title}`);
   navigate('tickets');

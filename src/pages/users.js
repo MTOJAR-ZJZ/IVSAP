@@ -237,6 +237,7 @@ window.saveAddDept = () => {
     window.DB.depts.push(newDept);
   }
   closeModal();
+  if (window.API_SAVE) window.API_SAVE.addDept({ id: newDept.id, name, parent_id: parentId || null }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast(`部门「${name}」创建成功`);
   renderUsers();
@@ -294,6 +295,7 @@ window.saveAddUser = () => {
   });
   closeModal();
   toast('人员添加成功');
+  if (window.API_SAVE) window.API_SAVE.addUser({ name, account: phone, dept: document.getElementById('userDept').value, role: document.getElementById('userRole').value, phone, email: document.querySelector('#userEmail')?.value || '', status: 'active' }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderUsers();
 };
@@ -377,6 +379,7 @@ window.saveEditUser = (id) => {
   }
   closeModal();
   toast('人员信息已更新，工单责任人已同步');
+  if (window.API_SAVE) window.API_SAVE.updateUser(id, { name: u.name, account: u.account, dept: u.dept, role: u.role, phone: u.phone, email: u.email }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderUsers();
 };
@@ -385,6 +388,7 @@ window.toggleUser = (id) => {
   const u = window.DB.users.find(x => x.id === id);
   u.status = u.status === 'active' ? 'disabled' : 'active';
   toast(`${u.name} 已${u.status === 'active' ? '启用' : '禁用'}`);
+  if (window.API_SAVE) window.API_SAVE.toggleUser(id).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderUsers();
 };
@@ -426,6 +430,7 @@ window.saveAddRole = () => {
     name, preset: false, perms: selected.length > 0 ? selected : ['none'],
   });
   closeModal();
+  if (window.API_SAVE) window.API_SAVE.addRole({ name, preset: false, perms: selected.length > 0 ? selected : ['none'] }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast('角色创建成功');
   switchUserTab(document.querySelector('#userTabContent'), 'roles');
@@ -468,6 +473,7 @@ window.saveEditRole = (id) => {
   r.perms = selected.length > 0 ? selected : ['none'];
   r.preset = false;
   closeModal();
+  if (window.API_SAVE) window.API_SAVE.updateRole(id, { name, perms: selected.length > 0 ? selected : ['none'], preset: false }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast('角色已更新，导航菜单已同步');
   switchUserTab(document.querySelector('#userTabContent'), 'roles');

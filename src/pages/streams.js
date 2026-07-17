@@ -113,7 +113,9 @@ function batchStreamAction(action) {
       window.DB.streams = window.DB.streams.filter(x => x.id !== id);
     }
   });
+  const batchIds = [...selectedStreams];
   selectedStreams.clear();
+  if (window.API_SAVE) window.API_SAVE.batchStreamAction(batchIds, action).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast(`批量${actionNames[action]}成功`);
   renderStreams();
@@ -140,7 +142,7 @@ function showAddStream() {
       <div class="form-group">
         <label class="form-label">协议</label>
         <select class="form-select" id="addStreamProtocol">
-          <option>RTSP</option><option>RTMP</option><option>HTTP-FLV</option>
+          <option>RTSP</option><option>RTMP</option><option>HTTP-FLV</option><option>HLS</option><option>WebRTC</option>
         </select>
       </div>
       <div class="form-group">
@@ -184,6 +186,7 @@ function saveStream() {
   });
   closeModal();
   toast(`推流「${name}」创建成功`);
+  if (window.API_SAVE) window.API_SAVE.stream({ name, addr, playUrl: document.getElementById('addStreamPlayUrl').value.trim() || '', protocol: document.getElementById('addStreamProtocol').value, res: document.getElementById('addStreamRes').value, fps: parseInt(document.getElementById('addStreamFps').value) || 25, captureInterval: parseInt(document.getElementById('addStreamCaptureInterval').value) || 5, codec: 'H.264', status: 'online' }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderStreams();
 }
@@ -229,6 +232,7 @@ function confirmEditStream(id) {
   s.captureInterval = parseInt(document.getElementById('editStreamCaptureInterval').value) || 5;
   closeModal();
   toast('推流信息已更新');
+  if (window.API_SAVE) window.API_SAVE.updateStream(id, s).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderStreams();
 }
@@ -242,6 +246,7 @@ function deleteStream(id) {
   window.DB.alerts = window.DB.alerts.filter(a => a.stream !== s.name);
   window.DB.streams = window.DB.streams.filter(x => x.id !== id);
   toast('推流已删除，关联检测项目和告警已清理');
+  if (window.API_SAVE) window.API_SAVE.deleteStream(id).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderStreams();
 }

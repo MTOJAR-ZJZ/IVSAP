@@ -52,11 +52,7 @@ function renderDashboard() {
         return html`
           <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)">
             <div style="background:#1a1a2e;height:160px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">
-              ${s.playUrl ? html`
-                <div class="flv-player" data-url="${s.playUrl}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#666">⏳ 加载中...</div>
-              ` : html`
-                <div style="font-size:48px">🎥</div>
-              `}
+              <div class="video-player" data-stream="${s.id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#666">⏳ 加载中...</div>
               <span class="badge badge-${s.status === 'online' ? 'online' : 'offline'}" style="position:absolute;top:8px;right:8px">
                 <span class="badge-dot"></span>${s.status === 'online' ? '在线' : '离线'}
               </span>
@@ -118,7 +114,7 @@ function renderDashboard() {
       </div>
     </div>
   `);
-  setTimeout(() => initFlvPlayers(), 100);
+  setTimeout(() => initVideoPlayers(), 100);
 }
 window.renderDashboard = renderDashboard;
 
