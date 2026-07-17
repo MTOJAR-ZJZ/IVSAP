@@ -25,7 +25,6 @@ function renderStreams() {
                 <th style="width:36px"><input type="checkbox" onchange="toggleAllStreams(this.checked)" /></th>
                 <th>流名称</th>
                 <th>源地址</th>
-                <th>协议</th>
                 <th>截图间隔</th>
                 <th>状态</th>
                 <th>操作</th>
@@ -37,7 +36,6 @@ function renderStreams() {
                   <td><input type="checkbox" data-id="${s.id}" onchange="toggleStream('${s.id}')" ${selectedStreams.has(s.id) ? 'checked' : ''} /></td>
                   <td><strong>${s.name}</strong></td>
                   <td style="font-size:12px;color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis">${s.addr || '-'}</td>
-                  <td>${s.protocol}</td>
                   <td><span class="badge badge-info" style="font-size:11px;background:#eff6ff;color:var(--info);border:1px solid #bfdbfe">${s.captureInterval || 5}s/次</span></td>
                   <td>
                     <span class="badge badge-${s.status === 'online' ? 'online' : 'offline'}">
@@ -121,15 +119,8 @@ function showAddStream() {
       <label class="form-label">流名称 *</label>
       <input class="form-input" placeholder="如：园区东门" id="addStreamName" />
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">协议</label>
-        <select class="form-select" id="addStreamProtocol">
-          <option>RTSP</option><option>RTMP</option><option>HTTP-FLV</option><option>HLS</option><option>WebRTC</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">分辨率</label>
+    <div class="form-group">
+      <label class="form-label">分辨率</label>
         <select class="form-select" id="addStreamRes">
           <option>1080P</option><option>720P</option><option>4K</option>
         </select>
@@ -159,7 +150,7 @@ function saveStream() {
     id: 'S' + String(window.DB.streams.length + 1).padStart(3, '0'),
     name, addr: '',
     playUrl: '',
-    protocol: document.getElementById('addStreamProtocol').value,
+    protocol: '',
     res: document.getElementById('addStreamRes').value,
     fps: parseInt(document.getElementById('addStreamFps').value) || 25,
     captureInterval: parseInt(document.getElementById('addStreamCaptureInterval').value) || 5,
@@ -168,7 +159,7 @@ function saveStream() {
   });
   closeModal();
   toast(`推流「${name}」创建成功`);
-  if (window.API_SAVE) window.API_SAVE.stream({ name, addr: '', playUrl: '', protocol: document.getElementById('addStreamProtocol').value, res: document.getElementById('addStreamRes').value, fps: parseInt(document.getElementById('addStreamFps').value) || 25, captureInterval: parseInt(document.getElementById('addStreamCaptureInterval').value) || 5, codec: 'H.264', status: 'online' }).catch(e => console.warn('[API]', e.message));
+  if (window.API_SAVE) window.API_SAVE.stream({ name, addr: '', playUrl: '', protocol: '', res: document.getElementById('addStreamRes').value, fps: parseInt(document.getElementById('addStreamFps').value) || 25, captureInterval: parseInt(document.getElementById('addStreamCaptureInterval').value) || 5, codec: 'H.264', status: 'online' }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderStreams();
 }
