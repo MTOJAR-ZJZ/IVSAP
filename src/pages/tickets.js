@@ -56,7 +56,7 @@ function renderTickets(mode) {
                     <span class="badge badge-${t.priority === 'high' ? 'error' : t.priority === 'mid' ? 'pending' : 'low'}" style="font-size:10px;margin-right:6px">${priorityMap[t.priority]}</span>
                     ${escapeHtml(t.title)}
                   </div>
-                  <div class="kanban-item-sub">${t.assignee} · ${t.sla}</div>
+                  <div class="kanban-item-sub">${(window.DB.users.find(u => u.id === t.assigneeId) || {}).name || t.assignee || '-'} · ${t.sla}</div>
                 </div>
               `).join('')}
             </div>
@@ -92,7 +92,7 @@ function renderTickets(mode) {
                     <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(t.title)}</td>
                     <td><span class="badge badge-${t.priority === 'high' ? 'error' : t.priority === 'mid' ? 'pending' : 'low'}">${priorityMap[t.priority]}</span></td>
                     <td><span class="badge ${t.status === 'pending_assign' ? 'badge-pending' : t.status === 'processing' ? 'badge-online' : t.status === 'review' ? 'badge-done' : 'badge-low'}">${statusMap[t.status]}</span></td>
-                    <td>${t.assignee}</td>
+                    <td>${(window.DB.users.find(u => u.id === t.assigneeId) || {}).name || t.assignee || '-'}</td>
                     <td style="font-size:12px;color:${t.sla === '已完成' ? 'var(--success)' : 'var(--text-secondary)'}">${t.sla}</td>
                     <td style="font-size:12px;color:var(--text-secondary)">${t.createdAt}</td>
                     <td>
@@ -200,7 +200,7 @@ window.showTicketDetail = (id) => {
       <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px">${escapeHtml(t.title)}</div>
       <div style="display:flex;gap:12px;font-size:13px;color:var(--text-secondary)">
         <span>状态：<strong>${statusMap[t.status]}</strong></span>
-        <span>责任人：<strong>${t.assignee}</strong></span>
+        <span>责任人：<strong>${(window.DB.users.find(u => u.id === t.assigneeId) || {}).name || t.assignee || '-'}</strong></span>
         <span>工单处理时限：<strong>${t.sla}</strong></span>
       </div>
     </div>
@@ -234,20 +234,13 @@ window.showTicketDetail = (id) => {
 };
 
 window.assignTicket = (id) => {
-  const users = window.DB.users.filter(u => u.status === 'active' && u.role === '值班工程师');
+  const users = window.DB.users.filter(u => u.status === 'active' && u.role === '值班人员');
   window.modal(html`
     <div class="modal-title">分配工单</div>
     <div class="form-group">
-      <label class="form-label">分配策略</label>
-      <select class="form-select" id="assignStrategy">
-        <option value="auto">自动分配（按忙闲度）</option>
-        <option value="manual">手动指派</option>
-      </select>
-    </div>
-    <div class="form-group">
       <label class="form-label">责任人</label>
       <select class="form-select" id="assignUser">
-        ${users.map(u => `<option value="${u.name}">${u.name}（${u.dept}）</option>`).join('')}
+        ${users.map(u => `<option value="${u.id}">${u.name}</option>`).join('')}
       </select>
     </div>
     <div class="modal-actions">
@@ -259,13 +252,16 @@ window.assignTicket = (id) => {
 
 window.doAssign = (id) => {
   const t = window.DB.tickets.find(x => x.id === id);
-  const user = document.getElementById('assignUser').value;
-  t.assignee = user;
+  const userId = document.getElementById('assignUser').value;
+  const user = window.DB.users.find(u => u.id === userId);
+  const userName = user ? user.name : userId;
+  t.assigneeId = userId;
+  t.assignee = userName;
   t.status = 'processing';
   t.sla = '剩余 29min';
   closeModal();
-  addTicketLog(t.id, `分配 ${t.title} 给 ${user}`);
-  toast(`工单已分配给 ${user}，通知已发送`);
+  addTicketLog(t.id, `分配 ${t.title} 给 ${userName}`);
+  toast(`工单已分配给 ${userName}，通知已发送`);
   if (window.API_SAVE) window.API_SAVE.assignTicket(id, user).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderTickets('list');
@@ -323,7 +319,7 @@ window.rejectTicket = (id) => {
 };
 
 window.showTicketRules = () => {
-  const rules = window.DB.config.ticketRules || { algoType: '全部', confidence: 80, hitCount: 3, assignStrategy: '按人员忙闲度' };
+  const rules = window.DB.config.ticketRules || { algoType: '全部', confidence: 80, hitCount: 3, assignStrategy: '按技能组轮询' };
   window.modal(html`
     <div class="modal-title">告警转工单规则</div>
     <div class="form-group">
@@ -347,7 +343,6 @@ window.showTicketRules = () => {
     <div class="form-group">
       <label class="form-label">自动分配策略</label>
       <select class="form-select" id="ruleStrategy">
-        <option ${rules.assignStrategy === '按人员忙闲度' ? 'selected' : ''}>按人员忙闲度</option>
         <option ${rules.assignStrategy === '按技能组轮询' ? 'selected' : ''}>按技能组轮询</option>
         <option ${rules.assignStrategy === '按值班表' ? 'selected' : ''}>按值班表</option>
       </select>

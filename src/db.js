@@ -43,17 +43,17 @@ window.DB = {
 
   users: [
     { id: 'U001', name: '管理员', account: 'admin', dept: '信息技术部', role: '系统管理员', phone: '13800001111', email: 'admin@sa.com', status: 'active' },
-    { id: 'U002', name: '张工', account: 'zhang', dept: '运维部-一值班组', role: '值班工程师', phone: '13800001122', email: 'zhang@sa.com', status: 'active' },
-    { id: 'U003', name: '李工', account: 'li', dept: '运维部-一值班组', role: '值班工程师', phone: '13800001133', email: 'li@sa.com', status: 'active' },
-    { id: 'U004', name: '王工', account: 'wang', dept: '运维部-二值班组', role: '值班工程师', phone: '13800001144', email: 'wang@sa.com', status: 'active' },
+    { id: 'U002', name: '张工', account: 'zhang', dept: '运维部-一值班组', role: '值班人员', phone: '13800001122', email: 'zhang@sa.com', status: 'active' },
+    { id: 'U003', name: '李工', account: 'li', dept: '运维部-一值班组', role: '值班人员', phone: '13800001133', email: 'li@sa.com', status: 'active' },
+    { id: 'U004', name: '王工', account: 'wang', dept: '运维部-二值班组', role: '值班人员', phone: '13800001144', email: 'wang@sa.com', status: 'active' },
     { id: 'U005', name: '赵主管', account: 'zhao', dept: '运维部', role: '运维主管', phone: '13800001155', email: 'zhao@sa.com', status: 'active' },
-    { id: 'U006', name: '刘工', account: 'liu', dept: '运维部-二值班组', role: '值班工程师', phone: '13800001166', email: 'liu@sa.com', status: 'disabled' },
+    { id: 'U006', name: '刘工', account: 'liu', dept: '运维部-二值班组', role: '值班人员', phone: '13800001166', email: 'liu@sa.com', status: 'disabled' },
   ],
 
   roles: [
     { id: 'R001', name: '系统管理员', preset: true, perms: ['dashboard','streams','detection','alerts','tickets','users','system'] },
     { id: 'R002', name: '运维主管', preset: true, perms: ['dashboard','streams','detection','alerts','tickets','users'] },
-    { id: 'R003', name: '值班工程师', preset: true, perms: ['dashboard','alerts','tickets'] },
+    { id: 'R003', name: '值班人员', preset: true, perms: ['dashboard','alerts','tickets'] },
     { id: 'R004', name: '业务分析师', preset: true, perms: ['dashboard','alerts'] },
   ],
 
@@ -113,7 +113,7 @@ window.DB = {
 (function() {
   const STORAGE_KEY = 'ivsap_db_data';
   const VERSION_KEY = 'ivsap_db_version';
-  const DB_VERSION = 3; // 种子数据版本，修改后请递增
+  const DB_VERSION = 4; // 种子数据版本，修改后请递增
 
   // 版本不匹配时清除旧缓存，使用最新的种子数据
   const savedVersion = parseInt(localStorage.getItem(VERSION_KEY), 10);

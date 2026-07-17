@@ -1,9 +1,8 @@
 /* ========================================
    Stream Analyzer — Users Page
-   人员权限、角色管理、排班日历
+   人员权限、角色管理
    ======================================== */
 
-let scheduleYear, scheduleMonth;
 
 function flattenDepts(depts, prefix = '') {
   const result = [];
@@ -33,7 +32,6 @@ function renderUsers() {
     <div class="tabs" id="userTabContent">
       <span class="tab active" data-tab="users" onclick="switchUserTab(this.parentElement, 'users')">人员管理</span>
       <span class="tab" data-tab="roles" onclick="switchUserTab(this.parentElement, 'roles')">角色权限</span>
-      <span class="tab" data-tab="schedule" onclick="switchUserTab(this.parentElement, 'schedule')">排班日历</span>
     </div>
     <div id="userPageContent"></div>
   `);
@@ -59,7 +57,6 @@ function switchUserTab(container, tab) {
                 <tr>
                   <th>姓名</th>
                   <th>账号</th>
-                  <th>所属部门</th>
                   <th>角色</th>
                   <th>手机号</th>
                   <th>状态</th>
@@ -71,7 +68,6 @@ function switchUserTab(container, tab) {
                   <tr>
                     <td><strong>${escapeHtml(u.name)}</strong></td>
                     <td>${escapeHtml(u.account)}</td>
-                    <td>${escapeHtml(u.dept)}</td>
                     <td>${escapeHtml(u.role)}</td>
                     <td>${escapeHtml(u.phone)}</td>
                     <td><span class="badge ${u.status === 'active' ? 'badge-online' : 'badge-offline'}"><span class="badge-dot"></span>${u.status === 'active' ? '启用' : '禁用'}</span></td>
@@ -115,8 +111,6 @@ function switchUserTab(container, tab) {
         </div>
       </div>
     `;
-  } else if (tab === 'schedule') {
-    renderScheduleCalendar(content);
   }
 }
 window.switchUserTab = switchUserTab;
@@ -132,67 +126,6 @@ function renderOrgTree(depts) {
     </div>
   `).join('');
 }
-
-function renderScheduleCalendar(container) {
-  const now = new Date();
-  const year = scheduleYear || now.getFullYear();
-  const month = scheduleMonth !== undefined ? scheduleMonth : now.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
-
-  container.innerHTML = html`
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-      <button class="btn btn-outline btn-sm" onclick="changeScheduleMonth(-1)">‹ 上月</button>
-      <span style="font-size:16px;font-weight:700;color:var(--text)">${year}年 ${monthNames[month]}</span>
-      <button class="btn btn-outline btn-sm" onclick="changeScheduleMonth(1)">下月 ›</button>
-      <span style="margin-left:auto;font-size:12px;color:var(--text-secondary)">早班 08-16 · 中班 16-00 · 夜班 00-08</span>
-    </div>
-    <div class="calendar-grid">
-      ${['日','一','二','三','四','五','六'].map(d => `<div class="calendar-header">${d}</div>`).join('')}
-      ${Array.from({length: firstDay}, () => '<div class="calendar-day other-month"></div>').join('')}
-      ${Array.from({length: daysInMonth}, (_, i) => {
-        const date = i + 1;
-        const daySchedules = window.DB.schedules.filter(s => s.year === year && s.month === month + 1 && s.date === date);
-        const isToday = now.getFullYear() === year && now.getMonth() === month && now.getDate() === date;
-        return html`
-          <div class="calendar-day ${isToday ? 'today' : ''}">
-            <div>${date}</div>
-            ${daySchedules.map(s => `<div class="shift shift-${s.shift.includes('早') ? 'morning' : s.shift.includes('中') ? 'afternoon' : 'night'}">${s.name}</div>`).join('')}
-          </div>
-        `;
-      }).join('')}
-    </div>
-    <div class="card" style="margin-top:16px">
-      <div class="card-header"><span class="card-title">值班人员</span><span class="card-title" style="font-weight:400;font-size:13px">当前值班：${window.DB.schedules.filter(s => s.year === now.getFullYear() && s.month === now.getMonth() + 1 && s.date === now.getDate()).map(s => s.name).join('、') || '无'}</span></div>
-      <div class="card-body">
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
-          ${window.DB.users.filter(u => u.status === 'active').map(u => html`
-            <div style="display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:6px">
-              <div class="user-avatar" style="width:28px;height:28px;font-size:12px">${u.name[0]}</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text)">${u.name}</div>
-                <div style="font-size:11px;color:var(--text-secondary)">${u.role} · ${u.dept}</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-window.changeScheduleMonth = (delta) => {
-  const now = new Date();
-  const year = scheduleYear || now.getFullYear();
-  const month = scheduleMonth !== undefined ? scheduleMonth : now.getMonth();
-  const newDate = new Date(year, month + delta, 1);
-  scheduleYear = newDate.getFullYear();
-  scheduleMonth = newDate.getMonth();
-  renderUsers();
-  const tabContainer = document.querySelector('#userTabContent');
-  if (tabContainer) switchUserTab(tabContainer, 'schedule');
-};
 
 // ===================== USER CRUD =====================
 
@@ -257,21 +190,13 @@ window.showAddUser = () => {
         <input type="hidden" id="userAccount" />
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">邮箱</label>
-        <input class="form-input" placeholder="邮箱" id="userEmail" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">所属部门</label>
-        <select class="form-select" id="userDept">
-          ${flattenDepts(window.DB.depts).map(d => `<option>${d}</option>`).join('')}
-        </select>
-      </div>
+    <div class="form-group">
+      <label class="form-label">邮箱</label>
+      <input class="form-input" placeholder="邮箱" id="userEmail" />
     </div>
     <div class="form-group">
       <label class="form-label">角色</label>
-      <select class="form-select" id="userRole"><option>值班工程师</option><option>运维主管</option><option>系统管理员</option><option>业务分析师</option></select>
+      <select class="form-select" id="userRole"><option>值班人员</option><option>运维主管</option><option>系统管理员</option><option>业务分析师</option></select>
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal()">取消</button>
@@ -288,7 +213,7 @@ window.saveAddUser = () => {
   window.DB.users.push({
     id: 'U' + String(window.DB.users.length + 1).padStart(3,'0'),
     name, account: phone,
-    dept: document.getElementById('userDept').value,
+    dept: '',
     role: document.getElementById('userRole').value,
     phone, email: document.querySelector('#userEmail')?.value || '',
     status: 'active',
@@ -301,9 +226,9 @@ window.saveAddUser = () => {
 };
 
 window.exportAddressBook = () => {
-  let csv = '姓名,账号,所属部门,角色,手机号,邮箱,状态\n';
+  let csv = '姓名,账号,角色,手机号,邮箱,状态\n';
   window.DB.users.forEach(u => {
-    csv += `${u.name},${u.account},${u.dept},${u.role},${u.phone},${u.email},${u.status === 'active' ? '启用' : '禁用'}\n`;
+    csv += `${u.name},${u.account},${u.role},${u.phone},${u.email},${u.status === 'active' ? '启用' : '禁用'}\n`;
   });
   const BOM = '\uFEFF';
   const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
@@ -334,22 +259,16 @@ window.showEditUser = (id) => {
         <input type="hidden" id="editUserAccount" value="${u.phone}" />
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">邮箱</label>
-        <input class="form-input" value="${u.email}" id="editUserEmail" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">所属部门</label>
-        <input class="form-input" value="${u.dept}" id="editUserDept" />
-      </div>
+    <div class="form-group">
+      <label class="form-label">邮箱</label>
+      <input class="form-input" value="${u.email}" id="editUserEmail" />
     </div>
     <div class="form-group">
       <label class="form-label">角色</label>
       <select class="form-select" id="editUserRole">
         <option value="系统管理员" ${u.role === '系统管理员' ? 'selected' : ''}>系统管理员</option>
         <option value="运维主管" ${u.role === '运维主管' ? 'selected' : ''}>运维主管</option>
-        <option value="值班工程师" ${u.role === '值班工程师' ? 'selected' : ''}>值班工程师</option>
+        <option value="值班人员" ${u.role === '值班人员' ? 'selected' : ''}>值班人员</option>
         <option value="业务分析师" ${u.role === '业务分析师' ? 'selected' : ''}>业务分析师</option>
       </select>
     </div>
@@ -371,11 +290,10 @@ window.saveEditUser = (id) => {
   u.phone = document.getElementById('editUserPhone').value;
   u.account = u.phone;
   u.email = document.getElementById('editUserEmail').value;
-  u.dept = document.getElementById('editUserDept').value;
+  u.dept = '';
   u.role = document.getElementById('editUserRole').value;
   if (oldName !== name) {
     window.DB.tickets.forEach(t => { if (t.assignee === oldName) t.assignee = name; });
-    window.DB.schedules.forEach(s => { if (s.name === oldName) s.name = name; });
   }
   closeModal();
   toast('人员信息已更新，工单责任人已同步');

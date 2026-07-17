@@ -55,19 +55,7 @@ function renderDetection() {
       </div>
     </div>
 
-    <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div class="card">
-        <div class="card-header"><span class="card-title">ROI 区域配置</span></div>
-        <div class="card-body">
-          <div class="chart-placeholder" style="height:240px">🖼️ 视频预览 + ROI 绘制区域</div>
-          <div style="display:flex;gap:8px;margin-top:12px;justify-content:center">
-            <button class="btn btn-outline btn-sm">✏️ 绘制矩形</button>
-            <button class="btn btn-outline btn-sm">🔷 绘制多边形</button>
-            <button class="btn btn-outline btn-sm">🚫 排除区域</button>
-            <button class="btn btn-outline btn-sm">📥 导入 JSON</button>
-          </div>
-        </div>
-      </div>
+    <div style="margin-top:16px">
       <div class="card">
         <div class="card-header"><span class="card-title">灵敏度与参数</span></div>
         <div class="card-body">
@@ -75,10 +63,6 @@ function renderDetection() {
             <label class="form-label">灵敏度阈值：0.65</label>
             <input type="range" min="0.1" max="0.9" step="0.05" value="0.65" style="width:100%;accent-color:var(--primary)" />
             <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary)">0.1 低灵敏 ← → 高灵敏 0.9</div>
-          </div>
-          <div style="margin-top:16px">
-            <label class="form-label">当前 ROI 坐标（JSON）</label>
-            <textarea class="form-input" rows="4" style="font-family:monospace;font-size:12px">{"polygons":[{"points":[[100,200],[300,150],[400,350],[150,400]],"type":"detect"}],"excludes":[]}</textarea>
           </div>
         </div>
       </div>
