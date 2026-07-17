@@ -125,6 +125,64 @@ function playWebRTC(container, stream) {
   container.onclick = () => video.requestFullscreen?.();
 }
 
+// --- 调用后端 resolve API 解析流地址 ---
+async function resolveStreamAddr(stream) {
+  // 已有 playUrl 跳过
+  if (stream.playUrl) return null;
+  // 只对 RTSP/RTMP 这类非直连地址发起解析
+  const addr = stream.addr || '';
+  if (!addr.startsWith('rtsp://') && !addr.startsWith('rtmp://')) return null;
+  try {
+    const res = await fetch('/api/streams/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ addr }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+// --- 渲染单个视频播放器 ---
+async function renderVideoPlayer(container, stream) {
+  // 尝试后端解析（异步，仅对 RTSP/RTMP 且无 playUrl 时发起）
+  let resolved = null;
+  if (!stream.playUrl && (stream.addr || '').startsWith('http')) {
+    // HTTP 地址直接用本地检测
+  } else if (!stream.playUrl) {
+    resolved = await resolveStreamAddr(stream);
+  }
+
+  // 确定播放 URL 和类型
+  const effectivePlayUrl = resolved?.playUrl || getPlayUrl(stream);
+  const effectiveType = resolved?.streamType
+    ? ({ flv: 'flv', hls: 'hls', rtmp: 'none', rtsp: 'none', webrtc: 'webrtc', unknown: 'none' })[resolved.streamType] || detectPlayerType(stream)
+    : detectPlayerType(stream);
+
+  container.dataset.playerType = effectiveType;
+
+  if (stream.status !== 'online') {
+    container.innerHTML = '📹<div style="font-size:12px;margin-top:4px;color:#999">设备离线</div>';
+    container.style.cursor = 'default'; return;
+  }
+
+  if (isDemoUrl(effectivePlayUrl) && effectiveType !== 'none') {
+    const labels = { flv: 'HTTP-FLV', hls: 'HLS', webrtc: 'WebRTC' };
+    container.innerHTML = `🎥<div style="font-size:12px;margin-top:4px;color:#999">${labels[effectiveType] || effectiveType} · 本地演示</div>`;
+    container.style.cursor = 'default'; return;
+  }
+
+  if (effectiveType === 'none' || !effectivePlayUrl) {
+    const msg = resolved?.message || 'RTSP/RTMP 流需要流媒体服务器（如 SRS/ZLMediaKit）转码后才能播放';
+    container.innerHTML = `🔄<div style="font-size:12px;margin-top:4px;color:#999">${msg}</div>`;
+    container.style.cursor = 'default'; return;
+  }
+
+  if (effectiveType === 'flv') playFLV(container, effectivePlayUrl);
+  else if (effectiveType === 'hls') playHLS(container, effectivePlayUrl);
+  else if (effectiveType === 'webrtc') playWebRTC(container, stream);
+}
+
 // --- 统一入口 ---
 function initVideoPlayers() {
   document.querySelectorAll('.video-player[data-stream]').forEach(container => {
@@ -133,25 +191,7 @@ function initVideoPlayers() {
     container.dataset.videoInited = '1';
     const stream = window.DB.streams.find(s => s.id === streamId);
     if (!stream) { container.innerHTML = '❓<div style="font-size:12px;margin-top:4px;color:#999">流已删除</div>'; return; }
-    const type = detectPlayerType(stream);
-    const url = getPlayUrl(stream);
-    container.dataset.playerType = type;
-    if (stream.status !== 'online') {
-      container.innerHTML = '📹<div style="font-size:12px;margin-top:4px;color:#999">设备离线</div>';
-      container.style.cursor = 'default'; return;
-    }
-    if (isDemoUrl(url) && type !== 'none') {
-      const labels = { flv: 'HTTP-FLV', hls: 'HLS', webrtc: 'WebRTC' };
-      container.innerHTML = `🎥<div style="font-size:12px;margin-top:4px;color:#999">${labels[type] || type} · 本地演示</div>`;
-      container.style.cursor = 'default'; return;
-    }
-    if (type === 'none' || !url) {
-      container.innerHTML = '🔄<div style="font-size:12px;margin-top:4px;color:#999">需流媒体服务器转码</div><div style="font-size:10px;color:var(--text-secondary);margin-top:2px">RTSP/RTMP → SRS/ZLMediaKit → HTTP-FLV/HLS/WebRTC</div>';
-      container.style.cursor = 'default'; return;
-    }
-    if (type === 'flv') playFLV(container, url);
-    else if (type === 'hls') playHLS(container, url);
-    else if (type === 'webrtc') playWebRTC(container, stream);
+    renderVideoPlayer(container, stream);
   });
 }
 

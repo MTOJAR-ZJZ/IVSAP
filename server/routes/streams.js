@@ -1,9 +1,19 @@
 import { Router } from 'express';
 import { query } from '../db/pool.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { resolveStream } from '../utils/resolver.js';
 
 const router = Router();
 router.use(authMiddleware);
+
+// POST /api/streams/resolve — 解析源地址，返回统一视频流信息
+router.post('/resolve', async (req, res) => {
+  const { addr } = req.body;
+  if (!addr) return res.status(400).json({ error: '请提供源地址 addr' });
+  const mediaServerUrl = process.env.MEDIA_SERVER_URL || '';
+  const result = resolveStream(addr, mediaServerUrl);
+  res.json(result);
+});
 
 router.get('/', async (req, res) => {
   const result = await query('SELECT * FROM streams ORDER BY created_at DESC');
