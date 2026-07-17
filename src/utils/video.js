@@ -12,19 +12,22 @@ function isDemoUrl(url) {
 function detectPlayerType(stream) {
   if (stream.playerType) return stream.playerType;
   const url = stream.playUrl || stream.addr || '';
+  if (!url) return 'none';
+  // 1. 按 URL 内容判断
   if (url.endsWith('.m3u8')) return 'hls';
   if (url.startsWith('webrtc://')) return 'webrtc';
   if (url.endsWith('.flv') || url.includes('.flv')) return 'flv';
+  if (url.startsWith('rtsp://') || url.startsWith('rtmp://')) return 'none';
+  // 2. 按协议字段辅助判断
   if (stream.protocol === 'HTTP-FLV') return 'flv';
   if (stream.protocol === 'HLS') return 'hls';
   if (stream.protocol === 'WebRTC') return 'webrtc';
-  if (stream.protocol === 'RTSP' || stream.protocol === 'RTMP') return 'none';
-  return 'flv';
+  // 3. HTTP URL 默认尝试 FLV 播放
+  if (url.startsWith('http')) return 'flv';
+  return 'none';
 }
 
 function getPlayUrl(stream) {
-  const type = detectPlayerType(stream);
-  if (type === 'webrtc') return stream.playUrl || stream.addr || '';
   return stream.playUrl || stream.addr || '';
 }
 
