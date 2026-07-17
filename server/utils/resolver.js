@@ -27,11 +27,12 @@ function resolveStream(addr, mediaServerUrl) {
   if (url.startsWith('rtsp://')) {
     protocol = 'RTSP';
     streamType = 'rtsp';
-    // RTSP 需要媒体服务器转码
+    // RTSP 需要媒体服务器转码为 WebRTC
     if (mediaServerUrl) {
       const streamId = url.split('/').pop() || url.replace(/^rtsp:\/\/[^/]+\//, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-      playUrl = `${mediaServerUrl}/live/${streamId}.flv`;
-      message = `已通过媒体服务器转码为 HTTP-FLV：${playUrl}`;
+      const host = mediaServerUrl.replace(/^https?:\/\//, '');
+      playUrl = `webrtc://${host}/live/${streamId}`;
+      message = `已通过媒体服务器转码为 WebRTC：${playUrl}`;
     } else {
       message = 'RTSP 流需要流媒体服务器（如 SRS/ZLMediaKit）转码后才能播放';
     }
@@ -40,8 +41,9 @@ function resolveStream(addr, mediaServerUrl) {
     streamType = 'rtmp';
     if (mediaServerUrl) {
       const streamId = url.split('/').pop() || url.replace(/^rtmp:\/\/[^/]+\//, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-      playUrl = `${mediaServerUrl}/live/${streamId}.flv`;
-      message = `已通过媒体服务器转码为 HTTP-FLV：${playUrl}`;
+      const host = mediaServerUrl.replace(/^https?:\/\//, '');
+      playUrl = `webrtc://${host}/live/${streamId}`;
+      message = `已通过媒体服务器转码为 WebRTC：${playUrl}`;
     } else {
       message = 'RTMP 流需要流媒体服务器（如 SRS/ZLMediaKit）转码后才能播放';
     }
@@ -64,12 +66,12 @@ function resolveStream(addr, mediaServerUrl) {
     playable = true;
     message = 'HTTP-FLV 流，可直接播放';
   } else if (url.startsWith('http://') || url.startsWith('https://')) {
-    // HTTP 地址无明确后缀，默认尝试 HTTP-FLV
-    protocol = 'HTTP-FLV';
-    streamType = 'flv';
+    // HTTP 地址无明确后缀，默认尝试 WebRTC
+    protocol = 'WebRTC';
+    streamType = 'webrtc';
     playUrl = url;
     playable = true;
-    message = 'HTTP 流，默认尝试 HTTP-FLV 播放';
+    message = 'HTTP 流，默认尝试 WebRTC 播放';
   } else {
     message = `无法识别的地址格式：${url}`;
   }

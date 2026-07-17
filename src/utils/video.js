@@ -22,8 +22,8 @@ function detectPlayerType(stream) {
   if (stream.protocol === 'HTTP-FLV') return 'flv';
   if (stream.protocol === 'HLS') return 'hls';
   if (stream.protocol === 'WebRTC') return 'webrtc';
-  // 3. HTTP URL 默认尝试 FLV 播放
-  if (url.startsWith('http')) return 'flv';
+  // 3. HTTP URL 默认使用 WebRTC 播放
+  if (url.startsWith('http')) return 'webrtc';
   return 'none';
 }
 
