@@ -1,13 +1,36 @@
 /* ========================================
    Stream Analyzer — Detection Page
-   检测项目管理
+   检测项目 + 算法管理（子标签页）
    ======================================== */
 
 function renderDetection() {
   window.setPageContent(html`
+    <div class="tabs" id="detectionTabContent">
+      <span class="tab active" data-tab="detections" onclick="switchDetectionTab('detections')">检测项目</span>
+      <span class="tab" data-tab="algorithms" onclick="switchDetectionTab('algorithms')">算法管理</span>
+    </div>
+    <div id="detectionPageContent"></div>
+  `);
+  switchDetectionTab('detections');
+}
+window.renderDetection = renderDetection;
+
+function switchDetectionTab(tab) {
+  const container = document.getElementById('detectionTabContent');
+  if (container) container.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  const content = document.getElementById('detectionPageContent');
+  if (tab === 'detections') {
+    renderDetectionsTab(content);
+  } else {
+    renderAlgoTab(content);
+  }
+}
+window.switchDetectionTab = switchDetectionTab;
+
+function renderDetectionsTab(container) {
+  container.innerHTML = html`
     <div class="quick-actions" style="margin-bottom:16px">
       <button class="btn btn-primary" onclick="showAddDetection()">＋ 创建检测项目</button>
-      <button class="btn btn-outline" onclick="navigate('algorithms')">🧠 算法管理</button>
     </div>
 
     <div class="card">
@@ -54,22 +77,14 @@ function renderDetection() {
         </div>
       </div>
     </div>
-
-    <div style="margin-top:16px">
-      <div class="card">
-        <div class="card-header"><span class="card-title">灵敏度与参数</span></div>
-        <div class="card-body">
-          <div class="form-group">
-            <label class="form-label">灵敏度阈值：0.65</label>
-            <input type="range" min="0.1" max="0.9" step="0.05" value="0.65" style="width:100%;accent-color:var(--primary)" />
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary)">0.1 低灵敏 ← → 高灵敏 0.9</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `);
+  `;
 }
-window.renderDetection = renderDetection;
+
+function renderAlgoTab(container) {
+  container.innerHTML = html`
+    ${getAlgoContentHtml()}
+  `;
+}
 
 // ===================== DETECTION CRUD =====================
 

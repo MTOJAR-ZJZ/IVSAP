@@ -3,15 +3,8 @@
    算法类型管理
    ======================================== */
 
-function renderAlgorithms() {
-  window.setPageContent(html`
-    <div class="quick-actions" style="margin-bottom:16px">
-      <button class="btn btn-outline" onclick="navigate('detection')">← 返回检测项目</button>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <input class="form-input" placeholder="输入新算法名称" id="algoPageNewName" style="width:200px" />
-        <button class="btn btn-primary" onclick="addAlgoFromPage()">＋ 添加算法</button>
-      </div>
-    </div>
+function getAlgoContentHtml() {
+  return html`
     <div class="card">
       <div class="card-header">
         <span class="card-title">算法类型管理</span>
@@ -39,7 +32,20 @@ function renderAlgorithms() {
         </div>
       </div>
     </div>
-    <div style="margin-top:16px;font-size:12px;color:var(--text-secondary)"">💡 点击"编辑"按钮可修改算法名称和提示词 · 算法名称变更自动同步到检测项目 · 大模型接口请在系统管理中配置</div>
+    <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
+      <input class="form-input" placeholder="输入新算法名称" id="algoPageNewName" style="width:200px" />
+      <button class="btn btn-primary" onclick="addAlgoFromPage()">＋ 添加算法</button>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text-secondary)"">💡 点击"编辑"按钮可修改算法名称和提示词 · 算法名称变更自动同步到检测项目</div>
+  `;
+}
+
+function renderAlgorithms() {
+  window.setPageContent(html`
+    <div class="quick-actions" style="margin-bottom:16px">
+      <button class="btn btn-outline" onclick="navigate('detection')">← 返回检测项目</button>
+    </div>
+    ${getAlgoContentHtml()}
   `);
 }
 window.renderAlgorithms = renderAlgorithms;
@@ -114,7 +120,9 @@ window.saveAlgoPrompt = (index) => {
   if (window.API_SAVE) window.API_SAVE.updateAlgo(index, { name: newName, prompt: window.DB.algoTypes[index].prompt }).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast('算法已保存');
-  if (window.AppState.currentPage === 'algorithms') renderAlgorithms(); else window.showAlgoManager();
+  const page = window.AppState.currentPage;
+  if (page === 'detection') renderDetection();
+  else if (page === 'algorithms') renderAlgorithms();
 };
 
 window.addAlgoType = () => {
@@ -138,7 +146,9 @@ window.addAlgoFromPage = () => {
   if (window.API_SAVE) window.API_SAVE.addAlgo(name).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast(`算法「${name}」已添加`);
-  renderAlgorithms();
+  const page = window.AppState.currentPage;
+  if (page === 'detection') renderDetection();
+  else renderAlgorithms();
 };
 
 window.removeAlgoType = (index) => {
@@ -153,5 +163,7 @@ window.removeAlgoType = (index) => {
   if (window.API_SAVE) window.API_SAVE.deleteAlgo(index).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   toast(`算法「${name}」已移除`);
-  if (window.AppState.currentPage === 'algorithms') renderAlgorithms(); else window.showAlgoManager();
+  const page = window.AppState.currentPage;
+  if (page === 'detection') renderDetection();
+  else if (page === 'algorithms') renderAlgorithms();
 };
