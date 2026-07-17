@@ -107,55 +107,9 @@ window.DB = {
 };
 
 // ===================== 数据持久化 =====================
-// 将数据保存至 localStorage，刷新页面后恢复
-// 版本号：修改种子数据时递增此值，自动清除旧缓存
+// 所有数据通过后端 API 写入数据库，前端不做本地持久化
+// window.DB._save 保留为空函数，兼容旧代码调用
 
-(function() {
-  const STORAGE_KEY = 'ivsap_db_data';
-  const VERSION_KEY = 'ivsap_db_version';
-  const DB_VERSION = 4; // 种子数据版本，修改后请递增
+window.DB._save = function() {};
 
-  // 版本不匹配时清除旧缓存，使用最新的种子数据
-  const savedVersion = parseInt(localStorage.getItem(VERSION_KEY), 10);
-  if (savedVersion !== DB_VERSION) {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.setItem(VERSION_KEY, String(DB_VERSION));
-  }
-
-  // 从 localStorage 恢复数据
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const data = JSON.parse(saved);
-      Object.keys(data).forEach(k => {
-        if (k === '_save') return;
-        if (Array.isArray(data[k])) {
-          window.DB[k] = data[k];
-        } else if (typeof data[k] === 'object' && data[k] !== null && window.DB[k]) {
-          Object.assign(window.DB[k], data[k]);
-        } else {
-          window.DB[k] = data[k];
-        }
-      });
-    }
-  } catch(e) { console.warn('DB restore error:', e); }
-
-  // 保存数据到 localStorage（防抖：200ms 内多次调用只存一次）
-  let _saveTimer;
-  window.DB._save = function() {
-    if (_saveTimer) clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(window.DB));
-      } catch(e) { console.warn('DB save error:', e); }
-    }, 200);
-  };
-
-  // 页面关闭/刷新时立即保存（跳过防抖）
-  window.addEventListener('beforeunload', () => {
-    if (_saveTimer) clearTimeout(_saveTimer);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(window.DB));
-  });
-  // 定期自动保存（每 30 秒兜底）
-  setInterval(() => window.DB._save(), 30000);
-})();
+// 页面关闭时不做额外操作（数据库负责持久化）
