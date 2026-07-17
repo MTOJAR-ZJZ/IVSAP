@@ -24,6 +24,7 @@ function renderStreams() {
               <tr>
                 <th style="width:36px"><input type="checkbox" onchange="toggleAllStreams(this.checked)" /></th>
                 <th>流名称</th>
+                <th>源地址</th>
                 <th>协议</th>
                 <th>截图间隔</th>
                 <th>状态</th>
@@ -35,6 +36,7 @@ function renderStreams() {
                 <tr>
                   <td><input type="checkbox" data-id="${s.id}" onchange="toggleStream('${s.id}')" ${selectedStreams.has(s.id) ? 'checked' : ''} /></td>
                   <td><strong>${s.name}</strong></td>
+                  <td style="font-size:12px;color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis">${s.addr || '-'}</td>
                   <td>${s.protocol}</td>
                   <td><span class="badge badge-info" style="font-size:11px;background:#eff6ff;color:var(--info);border:1px solid #bfdbfe">${s.captureInterval || 5}s/次</span></td>
                   <td>
@@ -198,6 +200,7 @@ function confirmEditStream(id) {
   const s = window.DB.streams.find(x => x.id === id);
   if (!s) return;
   s.name = document.getElementById('editStreamName').value || s.name;
+  s.addr = document.getElementById('editStreamAddr').value || '';
   s.captureInterval = parseInt(document.getElementById('editStreamCaptureInterval').value) || 5;
   closeModal();
   toast('推流信息已更新');
