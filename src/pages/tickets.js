@@ -262,7 +262,7 @@ window.doAssign = (id) => {
   closeModal();
   addTicketLog(t.id, `分配 ${t.title} 给 ${userName}`);
   toast(`工单已分配给 ${userName}，通知已发送`);
-  if (window.API_SAVE) window.API_SAVE.assignTicket(id, user).catch(e => console.warn('[API]', e.message));
+  if (window.API_SAVE) window.API_SAVE.assignTicket(id, userName, userId).catch(e => console.warn('[API]', e.message));
   window.DB._save();
   renderTickets('list');
   updateNavBadges();

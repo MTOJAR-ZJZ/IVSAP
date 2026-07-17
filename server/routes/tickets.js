@@ -31,9 +31,9 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id/assign', async (req, res) => {
-  const { assignee } = req.body;
-  const r = await query("UPDATE tickets SET assignee=$1, status='processing', sla='剩余 29min' WHERE id=$2 RETURNING *",
-    [assignee, req.params.id]);
+  const { assignee, assignee_id } = req.body;
+  const r = await query("UPDATE tickets SET assignee=$1, assignee_id=$2, status='processing', sla='剩余 29min' WHERE id=$3 RETURNING *",
+    [assignee, assignee_id || null, req.params.id]);
   if (r.rows.length === 0) return res.status(404).json({ error: '工单不存在' });
   res.json(r.rows[0]);
 });

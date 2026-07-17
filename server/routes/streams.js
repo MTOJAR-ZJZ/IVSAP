@@ -11,19 +11,22 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { name, addr, protocol, res: resolution, fps } = req.body;
+  const { name, addr, play_url, protocol, res: resolution, fps, capture_interval, codec } = req.body;
   if (!name || !addr) return res.status(400).json({ error: '流名称和推流地址为必填' });
   const id = 'S' + String((await query("SELECT count(*) FROM streams")).rows[0].count + 1).padStart(3,'0');
   const r = await query(
-    'INSERT INTO streams (id, name, addr, protocol, res, fps) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-    [id, name, addr, protocol || 'RTSP', resolution || '1080P', fps || 25]
+    'INSERT INTO streams (id, name, addr, play_url, protocol, res, fps, capture_interval, codec) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
+    [id, name, addr, play_url || '', protocol || 'RTSP', resolution || '1080P', fps || 25, capture_interval || 5, codec || 'H.264']
   );
   res.status(201).json(r.rows[0]);
 });
 
 router.put('/:id', async (req, res) => {
-  const { name, addr } = req.body;
-  const r = await query('UPDATE streams SET name=$1, addr=$2 WHERE id=$3 RETURNING *', [name, addr, req.params.id]);
+  const { name, addr, play_url, protocol, res: resolution, fps, capture_interval, codec, status } = req.body;
+  const r = await query(
+    `UPDATE streams SET name=$1, addr=$2, play_url=$3, protocol=$4, res=$5, fps=$6, capture_interval=$7, codec=$8, status=$9 WHERE id=$10 RETURNING *`,
+    [name, addr, play_url || '', protocol, resolution, fps, capture_interval, codec, status, req.params.id]
+  );
   if (r.rows.length === 0) return res.status(404).json({ error: '流不存在' });
   res.json(r.rows[0]);
 });

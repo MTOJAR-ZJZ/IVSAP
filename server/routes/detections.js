@@ -15,21 +15,21 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { name, stream_id, algo, roi, sensitivity } = req.body;
+  const { name, stream_id, algo, roi, sensitivity, data_type } = req.body;
   if (!name || !stream_id) return res.status(400).json({ error: '项目名称和关联流为必填' });
   const id = 'D' + String((await query("SELECT count(*) FROM detections")).rows[0].count + 1).padStart(3,'0');
   const r = await query(
-    'INSERT INTO detections (id, name, stream_id, algo, roi, sensitivity) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-    [id, name, stream_id, algo || '人员入侵', roi || '', sensitivity || 0.65]
+    'INSERT INTO detections (id, name, stream_id, algo, roi, sensitivity, data_type) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+    [id, name, stream_id, algo || '人员入侵', roi || '', sensitivity || 0.65, data_type || '实时视频流']
   );
   res.status(201).json(r.rows[0]);
 });
 
 router.put('/:id', async (req, res) => {
-  const { name, stream_id, algo, roi, sensitivity } = req.body;
+  const { name, stream_id, algo, roi, sensitivity, data_type } = req.body;
   const r = await query(
-    'UPDATE detections SET name=$1, stream_id=$2, algo=$3, roi=$4, sensitivity=$5 WHERE id=$6 RETURNING *',
-    [name, stream_id || null, algo, roi, sensitivity, req.params.id]
+    'UPDATE detections SET name=$1, stream_id=$2, algo=$3, roi=$4, sensitivity=$5, data_type=$6 WHERE id=$7 RETURNING *',
+    [name, stream_id || null, algo, roi, sensitivity, data_type || '实时视频流', req.params.id]
   );
   if (r.rows.length === 0) return res.status(404).json({ error: '检测项目不存在' });
   res.json(r.rows[0]);

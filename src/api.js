@@ -170,7 +170,7 @@ window.API_SAVE = {
   async updateAlertStatus(id, status, note) { return request('PATCH', '/alerts/' + id + '/status', { status, note }); },
   async createTicket(data) { return request('POST', '/tickets', data); },
 
-  async assignTicket(id, assignee) { return request('PUT', '/tickets/' + id + '/assign', { assignee }); },
+  async assignTicket(id, assignee, assignee_id) { return request('PUT', '/tickets/' + id + '/assign', { assignee, assignee_id }); },
   async updateTicketStatus(id, status, desc_text) { return request('PUT', '/tickets/' + id + '/status', { status, desc_text }); },
 
   async addUser(data) { return request('POST', '/users', data); },

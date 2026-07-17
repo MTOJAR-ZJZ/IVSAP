@@ -26,7 +26,7 @@ async function seed() {
   await pool.query(`INSERT INTO roles (id, name, preset, perms) VALUES
     ('R001','系统管理员',true, ARRAY['dashboard','streams','detection','algorithms','alerts','tickets','users','system']),
     ('R002','运维主管',true, ARRAY['dashboard','streams','detection','algorithms','alerts','tickets','users']),
-    ('R003','值班工程师',true, ARRAY['dashboard','alerts','tickets']),
+    ('R003','值班人员',true, ARRAY['dashboard','alerts','tickets']),
     ('R004','业务分析师',true, ARRAY['dashboard','alerts'])`);
   console.log('  roles OK');
 
@@ -35,11 +35,11 @@ async function seed() {
   const hp = await bcrypt.hash('123456', 10);
   await pool.query(`INSERT INTO users (id, name, account, password, role, dept, phone, email, status) VALUES
     ('U001','管理员','admin',    $1,'系统管理员','信息技术部','13800001111','admin@sa.com','active'),
-    ('U002','张工',  'zhang',   $1,'值班工程师','运维部-一值班组','13800001122','zhang@sa.com','active'),
-    ('U003','李工',  'li',      $1,'值班工程师','运维部-一值班组','13800001133','li@sa.com','active'),
-    ('U004','王工',  'wang',    $1,'值班工程师','运维部-二值班组','13800001144','wang@sa.com','active'),
+    ('U002','张工',  'zhang',   $1,'值班人员','运维部-一值班组','13800001122','zhang@sa.com','active'),
+    ('U003','李工',  'li',      $1,'值班人员','运维部-一值班组','13800001133','li@sa.com','active'),
+    ('U004','王工',  'wang',    $1,'值班人员','运维部-二值班组','13800001144','wang@sa.com','active'),
     ('U005','赵主管','zhao',    $1,'运维主管',   '运维部','13800001155','zhao@sa.com','active'),
-    ('U006','刘工',  'liu',     $1,'值班工程师','运维部-二值班组','13800001166','liu@sa.com','disabled')`, [hp]);
+    ('U006','刘工',  'liu',     $1,'值班人员','运维部-二值班组','13800001166','liu@sa.com','disabled')`, [hp]);
   console.log('  users OK');
 
   // ---- Streams ----
@@ -64,11 +64,11 @@ async function seed() {
 
   // ---- Detections ----
   await pool.query(`DELETE FROM detections`);
-  await pool.query(`INSERT INTO detections (id, name, stream_id, algo, roi, sensitivity, status) VALUES
-    ('D001','周界入侵检测-北门','S001','人员入侵','多边形(8点)',0.75,'running'),
-    ('D002','仓库烟火监测','S002','烟火检测','矩形',0.65,'running'),
-    ('D003','厂房区域越界','S003','区域越界','矩形+排除区域',0.8,'stopped'),
-    ('D004','停车场物品遗留','S004','物品遗留','多边形(6点)',0.7,'running')`);
+  await pool.query(`INSERT INTO detections (id, name, stream_id, algo, roi, sensitivity, data_type, status) VALUES
+    ('D001','周界入侵检测-北门','S001','人员入侵','多边形(8点)',0.75,'实时视频流','running'),
+    ('D002','仓库烟火监测','S002','烟火检测','矩形',0.65,'实时视频流','running'),
+    ('D003','厂房区域越界','S003','区域越界','矩形+排除区域',0.8,'实时视频流','stopped'),
+    ('D004','停车场物品遗留','S004','物品遗留','多边形(6点)',0.7,'实时视频流','running')`);
   console.log('  detections OK');
 
   // ---- Tickets ----
