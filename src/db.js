@@ -14,10 +14,10 @@ window.DB = {
   ],
 
   detections: [
-    { id: 'D001', name: '周界入侵检测-北门', stream: '园区北门主入口', algo: '人员入侵', roi: '多边形(8点)', sensitivity: 0.75, status: 'running', createdAt: '2026-07-14 09:10' },
-    { id: 'D002', name: '仓库烟火监测', stream: '仓库A区东侧', algo: '烟火检测', roi: '矩形', sensitivity: 0.65, status: 'running', createdAt: '2026-07-14 09:10' },
-    { id: 'D003', name: '厂房区域越界', stream: '厂房西门通道', algo: '区域越界', roi: '矩形+排除区域', sensitivity: 0.8, status: 'stopped', createdAt: '2026-07-13 14:30' },
-    { id: 'D004', name: '停车场物品遗留', stream: '停车场监控', algo: '物品遗留', roi: '多边形(6点)', sensitivity: 0.7, status: 'running', createdAt: '2026-07-13 10:45' },
+    { id: 'D001', name: '周界入侵检测-北门', stream: '园区北门主入口', dataType: '实时视频流', algo: '人员入侵', roi: '多边形(8点)', sensitivity: 0.75, status: 'running', createdAt: '2026-07-14 09:10' },
+    { id: 'D002', name: '仓库烟火监测', stream: '仓库A区东侧', dataType: '实时视频流', algo: '烟火检测', roi: '矩形', sensitivity: 0.65, status: 'running', createdAt: '2026-07-14 09:10' },
+    { id: 'D003', name: '厂房区域越界', stream: '厂房西门通道', dataType: '实时视频流', algo: '区域越界', roi: '矩形+排除区域', sensitivity: 0.8, status: 'stopped', createdAt: '2026-07-13 14:30' },
+    { id: 'D004', name: '停车场物品遗留', stream: '停车场监控', dataType: '实时视频流', algo: '物品遗留', roi: '多边形(6点)', sensitivity: 0.7, status: 'running', createdAt: '2026-07-13 10:45' },
   ],
 
   alerts: [

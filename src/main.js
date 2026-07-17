@@ -243,6 +243,7 @@ function renderDetection() {
                 <th>项目名称</th>
                 <th>关联视频流</th>
                 <th>算法类型</th>
+                <th>数据类型</th>
                 <th>ROI 区域</th>
                 <th>灵敏度</th>
                 <th>状态</th>
@@ -255,6 +256,7 @@ function renderDetection() {
                   <td><strong>${d.name}</strong></td>
                   <td>${d.stream}</td>
                   <td><span class="badge badge-online"><span class="badge-dot"></span>${d.algo}</span></td>
+                  <td><span class="badge badge-pending" style="font-size:11px">${d.dataType || '实时视频流'}</span></td>
                   <td style="font-size:12px;color:var(--text-secondary)">${d.roi}</td>
                   <td>${d.sensitivity}</td>
                   <td>
@@ -331,7 +333,7 @@ function renderAlgorithms() {
                 <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${(a.prompt || '暂无提示词').slice(0, 30)}${a.prompt && a.prompt.length > 30 ? '...' : ''}</div>
               </div>
               <div style="display:flex;gap:4px">
-                <button class="btn btn-outline btn-xs" onclick="editAlgoPrompt(${i})">提示词</button>
+                <button class="btn btn-outline btn-xs" onclick="editAlgoPrompt(${i})">编辑</button>
                 <button class="btn btn-danger btn-xs" onclick="removeAlgoType(${i})">删除</button>
               </div>
             </div>
@@ -340,7 +342,7 @@ function renderAlgorithms() {
         </div>
       </div>
     </div>
-    <div style="margin-top:16px;font-size:12px;color:var(--text-secondary)"">💡 点击"提示词"按钮编辑算法的 AI 检测提示词 · 大模型接口请在系统管理中配置</div>
+    <div style="margin-top:16px;font-size:12px;color:var(--text-secondary)"">💡 点击"编辑"按钮可修改算法名称和提示词 · 算法名称变更自动同步到检测项目 · 大模型接口请在系统管理中配置</div>
   `);
 }
 window.renderAlgorithms = renderAlgorithms;
@@ -353,7 +355,7 @@ window.showAlgoManager = () => {
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         ${window.DB.algoTypes.map((a, i) => html`
           <div style="display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:6px 10px">
-            <span style="font-size:13px;font-weight:600;cursor:pointer" onclick="editAlgoPrompt(${i})" title="点击编辑提示词">${typeof a === 'string' ? a : a.name}</span>
+            <span style="font-size:13px;font-weight:600;cursor:pointer" onclick="editAlgoPrompt(${i})" title="点击编辑算法名称和提示词">${typeof a === 'string' ? a : a.name}</span>
             <span style="cursor:pointer;color:#999;font-size:16px;line-height:1" onclick="removeAlgoType(${i})" title="移除该算法">×</span>
           </div>
         `).join('')}
@@ -364,7 +366,7 @@ window.showAlgoManager = () => {
       <button class="btn btn-primary" onclick="addAlgoType()">＋ 添加</button>
     </div>
     <div style="margin-top:12px;font-size:12px;color:var(--text-secondary)">
-      💡 点击算法名称可编辑提示词 · 大模型接口请在系统管理中配置
+      💡 点击算法名称可编辑名称和提示词 · 算法名称变更自动同步到检测项目 · 大模型接口请在系统管理中配置
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal()">完成</button>
@@ -378,7 +380,11 @@ window.editAlgoPrompt = (index) => {
   const prompt = a.prompt || '';
 
   modal(html`
-    <div class="modal-title">编辑提示词 — ${algoName}</div>
+    <div class="modal-title">编辑算法 — ${algoName}</div>
+    <div class="form-group">
+      <label class="form-label">算法名称</label>
+      <input class="form-input" value="${algoName}" id="algoName" placeholder="输入算法名称" />
+    </div>
     <div class="form-group">
       <label class="form-label">提示词（Prompt）</label>
       <textarea class="form-input" rows="6" placeholder="输入 AI 检测提示词..." id="algoPrompt" style="font-size:13px">${prompt}</textarea>
@@ -386,7 +392,7 @@ window.editAlgoPrompt = (index) => {
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="showAlgoManager()">返回</button>
-      <button class="btn btn-primary" onclick="saveAlgoPrompt(${index})">保存提示词</button>
+      <button class="btn btn-primary" onclick="saveAlgoPrompt(${index})">保存</button>
     </div>
   `);
 };
@@ -394,9 +400,20 @@ window.editAlgoPrompt = (index) => {
 window.saveAlgoPrompt = (index) => {
   const a = window.DB.algoTypes[index];
   if (typeof a === 'string') window.DB.algoTypes[index] = { name: a };
+  const newName = document.getElementById('algoName').value.trim();
+  if (!newName) { toast('请输入算法名称', 'error'); return; }
+  const oldName = window.DB.algoTypes[index].name;
+  // 检查新名称是否与其他算法重复（排除自身）
+  const duplicate = window.DB.algoTypes.some((x, i) => i !== index && (typeof x === 'string' ? x : x.name) === newName);
+  if (duplicate) { toast('该算法名称已存在', 'error'); return; }
+  // 如果算法名称变了，同步更新检测项目的 algo 字段
+  if (oldName !== newName) {
+    window.DB.detections.forEach(d => { if (d.algo === oldName) d.algo = newName; });
+  }
+  window.DB.algoTypes[index].name = newName;
   window.DB.algoTypes[index].prompt = document.getElementById('algoPrompt').value;
   window.DB._save();
-  toast('提示词已保存');
+  toast('算法已保存');
   if (currentPage === 'algorithms') renderAlgorithms(); else window.showAlgoManager();
 };
 
@@ -1750,10 +1767,23 @@ function showAddDetection() {
       <input class="form-input" placeholder="如：周界入侵检测" id="addDetName" />
     </div>
     <div class="form-group">
+      <label class="form-label">数据类型</label>
+      <select class="form-select" id="addDetDataType" onchange="toggleAddDetStream(this.value)">
+        <option value="实时视频流">实时视频流</option>
+        <option value="视频文件">视频文件</option>
+        <option value="图片分析">图片分析</option>
+        <option value="离线视频">离线视频</option>
+      </select>
+    </div>
+    <div class="form-group" id="addDetStreamGroup">
       <label class="form-label">关联视频流</label>
       <select class="form-select" id="addDetStream">
         ${window.DB.streams.map(s => `<option value="${s.name}">${s.name}</option>`).join('')}
       </select>
+    </div>
+    <div class="form-group" id="addDetFileGroup" style="display:none">
+      <label class="form-label">文件路径/URL</label>
+      <input class="form-input" placeholder="输入视频文件路径或 URL" id="addDetFileUrl" />
     </div>
     <div class="form-group">
       <label class="form-label">算法类型</label>
@@ -1769,12 +1799,28 @@ function showAddDetection() {
 }
 window.showAddDetection = showAddDetection;
 
+window.toggleAddDetStream = (dataType) => {
+  const streamGroup = document.getElementById('addDetStreamGroup');
+  const fileGroup = document.getElementById('addDetFileGroup');
+  if (dataType === '实时视频流') {
+    streamGroup.style.display = '';
+    fileGroup.style.display = 'none';
+  } else {
+    streamGroup.style.display = 'none';
+    fileGroup.style.display = '';
+  }
+};
+
 function confirmAddDetection() {
   const name = document.getElementById('addDetName').value;
   if (!name) { toast('请输入检测项目名称', 'error'); return; }
+  const dataType = document.getElementById('addDetDataType').value;
+  const stream = dataType === '实时视频流'
+    ? document.getElementById('addDetStream').value
+    : (document.getElementById('addDetFileUrl').value || '未指定文件');
   window.DB.detections.push({
     id: 'D' + String(window.DB.detections.length + 1).padStart(3, '0'),
-    name, stream: document.getElementById('addDetStream').value,
+    name, dataType, stream,
     algo: document.getElementById('addDetAlgo').value,
     roi: '矩形', sensitivity: 0.65, status: 'running',
     createdAt: new Date().toLocaleString('zh-CN'),
@@ -1799,8 +1845,32 @@ window.toggleDetection = toggleDetection;
 function editDetection(id) {
   const d = window.DB.detections.find(x => x.id === id);
   if (!d) return;
+  const DATA_TYPES = ['实时视频流', '视频文件', '图片分析', '离线视频'];
+  const isStreamType = d.dataType === '实时视频流' || !d.dataType;
   modal(html`
     <div class="modal-title">检测配置 — ${d.name}</div>
+    <div class="form-group">
+      <label class="form-label">数据类型</label>
+      <select class="form-select" id="editDetDataType" onchange="toggleEditDetStream(this.value)">
+        ${DATA_TYPES.map(t => `<option value="${t}" ${(d.dataType || '实时视频流') === t ? 'selected' : ''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group" id="editDetStreamGroup" style="${isStreamType ? '' : 'display:none'}">
+      <label class="form-label">关联视频流</label>
+      <select class="form-select" id="editDetStream">
+        ${window.DB.streams.map(s => `<option value="${s.name}" ${s.name === d.stream ? 'selected' : ''}>${s.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group" id="editDetFileGroup" style="${isStreamType ? 'display:none' : ''}">
+      <label class="form-label">文件路径/URL</label>
+      <input class="form-input" value="${isStreamType ? '' : d.stream}" placeholder="输入视频文件路径或 URL" id="editDetFileUrl" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">算法类型</label>
+      <select class="form-select" id="editDetAlgo">
+        ${window.DB.algoTypes.map(a => `<option value="${typeof a === 'string' ? a : a.name}" ${d.algo === (typeof a === 'string' ? a : a.name) ? 'selected' : ''}>${typeof a === 'string' ? a : a.name}</option>`).join('')}
+      </select>
+    </div>
     <div class="form-group">
       <label class="form-label">灵敏度</label>
       <input type="range" min="0.1" max="0.9" step="0.05" value="${d.sensitivity}" id="editDetSensitivity" oninput="this.nextElementSibling.textContent=this.value" style="width:100%;accent-color:var(--primary)" />
@@ -1818,9 +1888,27 @@ function editDetection(id) {
 }
 window.editDetection = editDetection;
 
+window.toggleEditDetStream = (dataType) => {
+  const streamGroup = document.getElementById('editDetStreamGroup');
+  const fileGroup = document.getElementById('editDetFileGroup');
+  if (dataType === '实时视频流') {
+    streamGroup.style.display = '';
+    fileGroup.style.display = 'none';
+  } else {
+    streamGroup.style.display = 'none';
+    fileGroup.style.display = '';
+  }
+};
+
 window.confirmEditDetection = (id) => {
   const d = window.DB.detections.find(x => x.id === id);
   if (!d) return;
+  const dataType = document.getElementById('editDetDataType').value;
+  d.dataType = dataType;
+  d.stream = dataType === '实时视频流'
+    ? document.getElementById('editDetStream').value
+    : (document.getElementById('editDetFileUrl').value || d.stream);
+  d.algo = document.getElementById('editDetAlgo').value;
   d.sensitivity = parseFloat(document.getElementById('editDetSensitivity').value) || d.sensitivity;
   d.roi = document.getElementById('editDetRoi').value || d.roi;
   closeModal();
