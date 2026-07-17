@@ -90,7 +90,26 @@
   <!-- ===== Toast ===== -->
   <div class="toast-container" id="toastContainer"></div>
 
+  <!-- 加载动画 -->
+  <div id="appLoader" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f0f2f5;transition:opacity .4s">
+    <div style="width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#1a56db;border-radius:50%;animation:spin .8s linear infinite"></div>
+    <div style="margin-top:16px;font-size:14px;color:#666">加载中...</div>
+  </div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+  <script src="https://cdn.jsdelivr.net/npm/flv.js@1.6.2/dist/flv.min.js"></script>
   <script src="src/db.js"></script>
+  <script src="src/utils/dom.js"></script>
+  <script src="src/utils/flv.js"></script>
+  <script src="src/app.js"></script>
+  <script src="src/pages/dashboard.js"></script>
+  <script src="src/pages/streams.js"></script>
+  <script src="src/pages/detection.js"></script>
+  <script src="src/pages/algorithms.js"></script>
+  <script src="src/pages/alerts.js"></script>
+  <script src="src/pages/tickets.js"></script>
+  <script src="src/pages/users.js"></script>
+  <script src="src/pages/system.js"></script>
   <script src="src/api.js"></script>
   <script src="src/main.js"></script>
 </body>
